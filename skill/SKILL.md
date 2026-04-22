@@ -1,0 +1,190 @@
+---
+name: orchestrator
+description: Sub-agent team orchestration for build → review → merge → next-task loops. Use when the user invokes `/orchestrate`, says "have the team complete...", "run the next N tasks", "execute sprint X", "ticket-driven development", or any phrasing involving sub-agent teams completing tickets/tasks/issues with peer review and auto-merge. Coordinates a builder team and a reviewer team across task/sprint branches with desktop notifications and living-doc updates.
+---
+
+# Orchestrator — Builder/Reviewer Team Loop
+
+You are running a multi-agent ticket-completion loop. Your job is to coordinate, not to write the code yourself. The **builder team** writes code. The **reviewer team** verifies it. You merge, notify, and advance.
+
+## Activation
+
+This skill activates when:
+- User runs `/orchestrate <target>` (target = task ID like `task-42` or bare `42`, `sprint-N`, `count:N`, or `next`).
+- User says: "have the team build…", "run next N tickets", "execute sprint 3", "complete the next task and stop", etc.
+
+If the slash command was used, the target argument is already in the prompt. Otherwise extract the target from the user's message and confirm if ambiguous.
+
+## Step 0 — Init shortcut
+
+If the target is `init`, this is a setup-only invocation. Do NOT start any task work.
+
+```
+node {SKILL_DIR}/../scripts/init-project.mjs
+```
+
+This is idempotent and will:
+- Create `.orchestrator.json` with auto-detected `commands` (or leave existing one untouched).
+- Create the `.orchestrator/`, `.orchestrator/reviews/`, `.orchestrator/gates/` state dirs.
+- Scaffold missing living docs (`MEMORY.md`, `STATUS_SUMMARY.md`, `TASKLIST.md`, `GIT_COMMITS.md`, `REVIEW_LOG.md`) from templates — only docs listed in `config.livingDocs` and not already present.
+- Append `.orchestrator/` to `.gitignore` if missing.
+
+Show the user the JSON result, then advise them to:
+1. Review `builderAgents` and `reviewerAgents` arrays in `.orchestrator.json` — these are placeholders until mapped to real agents on their machine.
+2. Verify `commands.test|lint|build` match their project; set any to `null` to skip that gate.
+3. Add tasks to `TASKLIST.md` under a `## Sprint N` header before running `/orchestrate sprint-N`.
+
+Then **STOP.** Do not proceed to Step 1.
+
+## Step 1 — Load project config
+
+Run the helper to load (or create) `.orchestrator.json` in the project root:
+
+```
+node {SKILL_DIR}/../scripts/load-config.mjs
+```
+
+It outputs JSON with: `branchPrefix`, `builderAgents[]`, `reviewerAgents[]`, `maxRetries`, `commands.test|lint|build`, `tasksSource`, `livingDocs[]`, `mergeStrategy`, `githubRepo`. If the file does not exist, the script auto-detects defaults from `package.json`/`pyproject.toml`/`Cargo.toml` and writes a starter file. **Show the user the config it loaded** before the first task.
+
+## Step 2 — Resolve task list
+
+Run:
+
+```
+node {SKILL_DIR}/../scripts/resolve-tasks.mjs "<TARGET>"
+```
+
+(`--target "<TARGET>"` is also accepted.) Returns an ordered JSON array: `[{id, slug, title, source, sprintId, body, resolution}]`. Sources checked in order: `TASKLIST.md`, `PHASE_*_PLAN.md`, then `gh issue list` if available. Sprint scoping in markdown is parsed from `## Sprint N` / `## Phase N` headers. If zero tasks resolve, stop and ask the user to clarify.
+
+## Step 3 — The loop
+
+For each task, in order:
+
+### 3a. Branch setup
+
+Ensure the sprint umbrella branch exists, then create the task sub-branch:
+
+```
+node {SKILL_DIR}/../scripts/branch-setup.mjs --sprint <N> --task <id> --slug <slug>
+```
+
+Creates flat-named branches: `sprint-<N>` (off `main` if missing) and `sprint-<N>-task-<id>-<slug>` (off `sprint-<N>`), then checks out the task branch. Flat hyphenated naming avoids the git ref-tree namespace collision that nested naming (`sprint/N` blocking `sprint/N/task-...`) would cause. **Never** auto-create branches off `main` for individual tasks — they must come off the sprint branch.
+
+### 3b. Dispatch builder team
+
+Use the **Task tool** to dispatch each builder agent from `config.builderAgents` in parallel when their roles are independent (architect → coder → tester is sequential; coder + doc-writer can be parallel). Pass them:
+- The full task body and acceptance criteria
+- The list of `livingDocs` they must update on completion
+- Explicit instruction: "Do not commit. Do not merge. Stop when done and report what changed."
+
+Recommended roles to map in config: `architect`, `coder`, `tester`, `docs`. Common picks: `@code-architect`, `@fullstack-developer`, `@test-automator`, `@technical-writer`. The user's project config decides.
+
+### 3c. Commit task work
+
+Once builders return:
+
+```
+node {SKILL_DIR}/../scripts/commit-task.mjs --task <id> --slug <slug> --title "<title>"
+```
+
+Stages all changes, generates a conventional commit message (`feat(task-<id>): <title>`), commits to the task branch, and appends to `GIT_COMMITS.md`.
+
+### 3d. Dispatch reviewer team
+
+Use the **Task tool** to dispatch each reviewer agent from `config.reviewerAgents`. Pass them:
+- The task description and acceptance criteria
+- The diff (`git diff sprint-<N>...HEAD`)
+- The configured `commands.test|lint|build` to run (these are the *gate* commands; reviewers may inspect results but don't need to re-run them)
+- Required output schema (canonical):
+  ```json
+  {
+    "reviewer": "<agent-name>",
+    "verdict": "approve" | "request_changes" | "block",
+    "requires_human_decision": false,
+    "findings": [{ "severity": "info|warn|error", "file": "...", "line": 0, "message": "..." }]
+  }
+  ```
+  The legacy shape `{ "approved": true|false, ... }` is still accepted by `run-gates.mjs`, but emit the canonical schema for new work.
+
+Common reviewer picks: `@code-reviewer`, `@security-auditor`, `@architect-reviewer`. Run them in parallel.
+
+### 3e. Aggregate review + run gates
+
+```
+node {SKILL_DIR}/../scripts/run-gates.mjs --task <id>
+```
+
+This script:
+1. Runs configured `test`, `lint`, `build` commands (skips any not configured — unconfigured ≠ failed), captures pass/fail.
+2. Reads every reviewer file matching `.orchestrator/reviews/task-<id>-attempt-<n>-*.json`.
+3. Appends a row to `REVIEW_LOG.md`.
+4. **Persists the aggregated result to `.orchestrator/gates/task-<id>-attempt-<n>.json`** (consumed by `merge-task.mjs` for safety verification).
+5. Returns `{passed: bool, failures: [...], notifyReason?: string}` and exits non-zero on failure.
+
+**Before running this script:** save each reviewer's structured output to `.orchestrator/reviews/task-<id>-attempt-<n>-<reviewer>.json` (one file per reviewer, with the reviewer agent name in the filename).
+
+### 3f. Decision tree
+
+- **All gates pass** → go to 3g.
+- **Gates fail AND attempt < maxRetries** → notify reviewer findings to builder team via Task tool with prompt: "Review feedback on task-<id>. Address every finding. Do not commit until done." Then loop back to 3c. Increment attempt counter.
+- **Gates fail AND attempt >= maxRetries** → Run `node {SKILL_DIR}/../scripts/notify.mjs --title "Task <id> blocked" --body "Max retries reached. <summary>" --reason blocked`. STOP the loop. Wait for user.
+- **Any reviewer emits `verdict: "block"` or `requires_human_decision: true`** → notify and stop, regardless of attempt count.
+
+### 3g. Merge task → sprint
+
+```
+node {SKILL_DIR}/../scripts/merge-task.mjs --sprint <N> --task <id> --slug <slug>
+```
+
+**Safety:** this script refuses to merge (exit code 3) unless `.orchestrator/gates/task-<id>-attempt-<n>.json` exists AND its latest attempt shows `passed: true`. Pass `--force` only to override in an emergency (logs a warning).
+
+Switches to `sprint-<N>`, merges `sprint-<N>-task-<id>-<slug>` with `--no-ff` to keep history visible, deletes the task branch locally. Updates living docs:
+- `MEMORY.md` — bumps `next_task_id`, prepends recent_changes bullet
+- `STATUS_SUMMARY.md` — appends 1–3 factual change bullets
+- `TASKLIST.md` / `PHASE_*_PLAN.md` — checks off the task
+- `ADVENTURES_IN_CODING.md` — only if `narrated_dev` persona is active (script detects via persona-mcp or env var)
+
+### 3h. Advance
+
+Run `node {SKILL_DIR}/../scripts/notify.mjs --title "Task <id> merged" --body "<title>" --reason progress` (low-priority toast). Move to next task in the queue.
+
+## Step 4 — Sprint completion
+
+When all tasks in a sprint are done:
+1. Run `node {SKILL_DIR}/../scripts/notify.mjs --title "Sprint <N> complete" --body "All <count> tasks merged into sprint-<N>. Approve merge to main?" --reason approval`.
+2. **STOP.** Do not auto-merge sprint into main. Wait for user. When user approves, run `node {SKILL_DIR}/../scripts/merge-sprint.mjs --sprint <N>`.
+
+## Step 5 — Idle
+
+When the queue is empty (or user said "do 1 task"), notify completion and **stop generating**. Do not start anything new.
+
+## Critical rules
+
+- **You orchestrate. You do not write feature code.** Builder agents do that.
+- **One task = one sub-branch = one merge commit into the sprint branch.** No exceptions.
+- **Never merge to main automatically.** Sprint→main is always human-gated.
+- **Always notify on**: blocked task (max retries), human decision required, sprint complete. Never spam (no toast for routine merges if `--reason progress` is configured silent).
+- **Living docs are non-negotiable.** If the merge script reports a doc update failed, treat it as a gate failure.
+- **Persist state**: `.orchestrator/state.json` tracks current sprint, current task, attempt count, queue. Resume from this on re-invocation.
+- **All `.orchestrator/` artifacts are UTF-8.** Reviewer JSON, gate results, state, notification logs.
+
+## Helper scripts
+
+All scripts live in the skill's adjacent `scripts/` directory. Resolve `{SKILL_DIR}` from the skill's location. They take JSON-friendly args, print structured JSON to stdout, exit non-zero on hard failure.
+
+| Script | Purpose |
+|---|---|
+| `init-project.mjs` | One-shot setup: config + living docs + .gitignore (Step 0 only) |
+| `load-config.mjs` | Load/create `.orchestrator.json` |
+| `resolve-tasks.mjs` | Expand `<target>` into task array |
+| `branch-setup.mjs` | Create sprint + task branches |
+| `commit-task.mjs` | Stage + commit task work, update GIT_COMMITS.md |
+| `run-gates.mjs` | Run test/lint/build, aggregate review verdicts |
+| `merge-task.mjs` | Merge task→sprint, update living docs |
+| `merge-sprint.mjs` | Merge sprint→main (only after user approval) |
+| `notify.mjs` | Desktop notification via BurntToast |
+| `state.mjs` | Read/write `.orchestrator/state.json` |
+
+## Configuration reference
+
+See `templates/orchestrator.json` for the schema. Project-specific overrides go in `.orchestrator.json` at project root.

@@ -1,0 +1,41 @@
+{
+  "$schema": "./orchestrator.schema.json",
+  "branchPrefix": "sprint",
+  "builderAgents": [
+    { "role": "architect", "agent": "code-architect", "parallel": false },
+    { "role": "coder", "agent": "fullstack-developer", "parallel": false },
+    { "role": "tester", "agent": "test-automator", "parallel": true },
+    { "role": "docs", "agent": "technical-writer", "parallel": true }
+  ],
+  "reviewerAgents": [
+    { "role": "code-review", "agent": "code-reviewer" },
+    { "role": "security", "agent": "security-auditor" },
+    { "role": "architecture", "agent": "architect-reviewer" }
+  ],
+  "maxRetries": 2,
+  "commands": {
+    "test": null,
+    "lint": null,
+    "build": null
+  },
+  "tasksSource": {
+    "primary": "TASKLIST.md",
+    "phasePattern": "PHASE_*_PLAN.md",
+    "fallback": "github"
+  },
+  "livingDocs": [
+    "MEMORY.md",
+    "STATUS_SUMMARY.md",
+    "GIT_COMMITS.md",
+    "REVIEW_LOG.md",
+    "TASKLIST.md",
+    "ADVENTURES_IN_CODING.md"
+  ],
+  "mergeStrategy": "no-ff",
+  "githubRepo": null,
+  "notifications": {
+    "progress": "silent",
+    "approval": "toast",
+    "blocked": "toast"
+  }
+}
