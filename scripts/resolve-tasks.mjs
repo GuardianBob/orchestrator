@@ -71,11 +71,28 @@ const all = loadAllTasks();
 let queue = [];
 let resolution = 'none';
 
+const mReviewSprint = target.match(/^review-sprint(?:-(\d+))?$/i);
 const mCount = target.match(/^count:(\d+)$/i);
 const mSprint = target.match(/^(?:sprint|phase)-(\d+)$/i);
 const mTask = target.match(/^task-(.+)$/i);
 const mJira = target.match(/^([A-Z]+-\d+)$/);
 const mPlainNum = target.match(/^(\d+)$/);
+
+if (mReviewSprint) {
+  // Non-task target: orchestrator skill handles via review-sprint.mjs.
+  // Return empty queue + signal so the caller doesn't try to dispatch builders.
+  queue = [];
+  resolution = 'review-sprint';
+  console.log(JSON.stringify({
+    target,
+    resolution,
+    sprintId: mReviewSprint[1] || null,
+    handler: 'review-sprint.mjs',
+    queue: [],
+    note: 'Non-task target. Orchestrator should invoke scripts/review-sprint.mjs and follow its instructions.',
+  }, null, 2));
+  process.exit(0);
+}
 
 if (target === 'next') {
   queue = all.slice(0, 1);

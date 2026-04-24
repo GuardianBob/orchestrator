@@ -38,13 +38,21 @@ Install-Module -Name BurntToast -Scope CurrentUser -Force
 ## Usage
 
 ```
-/orchestrate init        # one-shot project setup, then stop (no task work)
-/orchestrate next        # one task, then stop
-/orchestrate task-42     # one specific task (or bare: /orchestrate 42)
-/orchestrate sprint-3    # every task under "## Sprint 3" / "## Phase 3" header
-/orchestrate count:5     # the next five tasks
-/orchestrate JIRA-101    # ticket-style IDs supported
+/orchestrate init             # one-shot project setup, then stop (no task work)
+/orchestrate next             # one task, then stop
+/orchestrate task-42          # one specific task (or bare: /orchestrate 42)
+/orchestrate sprint-3         # every task under "## Sprint 3" / "## Phase 3" header
+/orchestrate count:5          # the next five tasks
+/orchestrate JIRA-101         # ticket-style IDs supported
+/orchestrate review-sprint    # post-sprint audit: cross-reference latest sprint-N-complete.md against TASKLIST.md, propose new tasks, ask for confirmation, append. No agents dispatched.
+/orchestrate review-sprint-2  # same, but explicitly target sprint 2
 ```
+
+### Sprint review (`/orchestrate review-sprint`)
+
+Sprint completion reports (`.orchestrator/sprints/sprint-N-complete.md`) and reviewer findings frequently surface deferred items, missed bugs, security backlog entries, and follow-up work that never get a task entry. The `review-sprint` target reads those artifacts, cross-references against `TASKLIST.md`, and **interactively** (via the `question` tool) proposes new tasks for you to confirm — including bundle/split decisions and target-sprint placement. Nothing is added without your approval. No code is written, no branches are created, no builders/reviewers are dispatched.
+
+The orchestrator also **automatically offers** a sprint review when a sprint completes, before asking you to approve the sprint→main merge. If you decline, it reminds you of the slash command.
 
 ### First-time project setup (`/orchestrate init`)
 
