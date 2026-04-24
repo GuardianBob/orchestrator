@@ -18,24 +18,109 @@ function slugify(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 
-// Parse a markdown file into tasks. Tracks `## Sprint N` / `## Phase N` headers
-// so tasks under each section inherit that sprint id. Falls back to defaultSprintId.
+// Header regexes — tolerant of em/en dashes and ranges (e.g. "Sprint 3–6 — Phase 3")
+const SPRINT_HEADER_RE = /^#{1,6}\s+(?:sprint|phase)\s*[-_]?\s*(\d+)(?:\s*[-–—_]\s*(\d+))?/i;
+// Heading-style task: "### task-001 — title", "## task-008a - title", optional ✅ or strikethrough.
+const TASK_HEADING_RE = /^#{2,6}\s+(?:~~)?task[-_\s]?([A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)?)\s*[—\-–:]\s*(.+?)\s*(?:~~)?\s*$/i;
+// JIRA-style heading: "### ABC-123 — title"
+const JIRA_HEADING_RE = /^#{2,6}\s+(?:~~)?([A-Z]{2,}-\d+)\s*[—\-–:]\s*(.+?)\s*(?:~~)?\s*$/;
+// Checkbox bullet: "- [ ] task-42: title"  (legacy format)
+const CHECKBOX_TASK_RE = /^\s*-\s*\[( |x|X)\]\s+(?:task[-_\s]?|#)?(\d+|[A-Z]+-\d+)[:\s—\-–]+(.+)$/;
+// Done markers in heading titles
+const DONE_MARKERS_RE = /(?:✅|✔️|☑|\bDONE\b|\bCOMPLETE(?:D)?\b|\[x\]|\[X\])/;
+
+// Parse a markdown file into tasks. Tracks `## Sprint N` / `## Phase N` (and ranges
+// like `## Sprint 3–6`) so tasks under each section inherit that sprint id.
+// Supports two task formats:
+//   1. Heading style: `### task-001 — title` (or `### ABC-123 — title`)
+//      → body = all lines until the next task heading, next sprint heading, or
+//        a `---` horizontal rule.
+//   2. Checkbox style (legacy): `- [ ] task-42: title`
+//      → body = title only.
+// `~~task-N~~`, `✅`, `[x]` in title, or `~~`-wrapped headings = done (skipped).
 function parseMarkdownTasks(file, defaultSprintId) {
   if (!fs.existsSync(file)) return [];
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
   const out = [];
   let currentSprint = defaultSprintId;
-  for (const line of lines) {
-    const h = line.match(/^#{1,6}\s+(?:sprint|phase)\s*[-_]?\s*(\d+)/i);
-    if (h) { currentSprint = h[1]; continue; }
-    const m = line.match(/^\s*-\s*\[( |x|X)\]\s+(?:task-|#)?(\d+|[A-Z]+-\d+)[:\s-]+(.+)$/);
-    if (!m) continue;
-    const done = m[1].toLowerCase() === 'x';
-    if (done) continue;
-    const id = m[2];
-    const title = m[3].trim();
-    out.push({ id, slug: slugify(title), title, source: path.basename(file), sprintId: currentSprint, body: title });
+  let currentSprintRangeEnd = null; // for "Sprint 3–6" — tasks inherit primary id but range is recorded
+  let pending = null; // accumulating-body state for heading-style tasks
+
+  function flushPending() {
+    if (!pending) return;
+    pending.body = pending.bodyLines.join('\n').trim() || pending.title;
+    delete pending.bodyLines;
+    out.push(pending);
+    pending = null;
   }
+
+  for (const line of lines) {
+    // Sprint header → flush, switch context, continue
+    const sh = line.match(SPRINT_HEADER_RE);
+    if (sh) {
+      flushPending();
+      currentSprint = sh[1];
+      currentSprintRangeEnd = sh[2] || null;
+      continue;
+    }
+
+    // Heading-style task (### task-NNN — title)
+    const th = line.match(TASK_HEADING_RE) || line.match(JIRA_HEADING_RE);
+    if (th) {
+      flushPending();
+      const id = th[1];
+      const rawTitle = th[2];
+      const isStrikethrough = /^#{2,6}\s+~~/.test(line);
+      const isDoneMarker = DONE_MARKERS_RE.test(rawTitle);
+      if (isStrikethrough || isDoneMarker) {
+        // Skip done tasks but don't open a pending block
+        pending = null;
+        continue;
+      }
+      const title = rawTitle.replace(DONE_MARKERS_RE, '').trim();
+      pending = {
+        id,
+        slug: slugify(title),
+        title,
+        source: path.basename(file),
+        sprintId: currentSprint,
+        sprintRangeEnd: currentSprintRangeEnd,
+        bodyLines: [],
+      };
+      continue;
+    }
+
+    // Horizontal rule or new top-level section → close pending body
+    if (pending) {
+      if (/^---+\s*$/.test(line) || /^#{1,2}\s+/.test(line)) {
+        flushPending();
+        // Don't `continue` — let the line still be evaluated (e.g. ## Sprint headers
+        // already returned above; remaining headings just terminate the pending body)
+      } else {
+        pending.bodyLines.push(line);
+        continue;
+      }
+    }
+
+    // Checkbox-style task (legacy)
+    const cb = line.match(CHECKBOX_TASK_RE);
+    if (cb) {
+      const done = cb[1].toLowerCase() === 'x';
+      if (done) continue;
+      const id = cb[2];
+      const title = cb[3].trim();
+      out.push({
+        id,
+        slug: slugify(title),
+        title,
+        source: path.basename(file),
+        sprintId: currentSprint,
+        sprintRangeEnd: currentSprintRangeEnd,
+        body: title,
+      });
+    }
+  }
+  flushPending();
   return out;
 }
 
@@ -101,7 +186,12 @@ if (target === 'next') {
   queue = all.slice(0, parseInt(mCount[1], 10));
   resolution = 'count';
 } else if (mSprint) {
-  queue = all.filter(t => t.sprintId === mSprint[1]);
+  const want = parseInt(mSprint[1], 10);
+  queue = all.filter(t => {
+    const start = parseInt(t.sprintId, 10);
+    const end = t.sprintRangeEnd ? parseInt(t.sprintRangeEnd, 10) : start;
+    return Number.isFinite(start) && want >= start && want <= end;
+  });
   resolution = 'sprint';
 } else if (mTask) {
   const t = all.find(x => x.id === mTask[1]);
