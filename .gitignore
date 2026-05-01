@@ -1,3 +1,9 @@
 orchestrator-review.md
 # orchestrator state (reviews, gates, notifications, resume snapshot)
 .orchestrator/
+
+# node / vitest
+node_modules/
+coverage/
+.vitest-cache/
+*.log
