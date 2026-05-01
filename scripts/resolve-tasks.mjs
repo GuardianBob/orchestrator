@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { ShardLibraryError, loadLibraries } from './shard-library.mjs';
+import { ShardLibraryError, loadLibraries, locateShard } from './shard-library.mjs';
 
 const argv = process.argv.slice(2);
 const flagIdx = argv.indexOf('--target');
@@ -145,23 +145,38 @@ function parseShardLibrary(lib) {
     console.error(`[resolve-tasks] WARN: failed to read/parse ${lib.indexPath}: ${e.message}. Library '${lib.id}' will contribute zero tasks.`);
     return out;
   }
-  if (!idx || !Array.isArray(idx.open_tasks)) return out;
-  const shardsDir = lib.shardDir;
+  if (!idx || !Array.isArray(idx.open_tasks)) {
+    console.error(`[resolve-tasks] WARN: ${lib.indexPath} has no \`open_tasks\` array; library '${lib.id}' will contribute zero tasks.`);
+    return out;
+  }
   const DONE_STATUSES = new Set(['done', 'completed', 'archived', 'cancelled', 'closed']);
   for (const row of idx.open_tasks) {
     if (!row || !row.id) continue;
     if (DONE_STATUSES.has(String(row.status || '').toLowerCase())) continue;
     const sprintTag = (row.tags || []).find(t => /^sprint-\d+$/i.test(t));
     const sprintId = sprintTag ? sprintTag.replace(/[^\d]/g, '') : '1';
-    const shardPath = path.join(shardsDir, `${row.id}.json`);
+    // Delegate path resolution to locateShard — routes through validateShardId
+    // (TASK-003) to block path-traversal IDs (e.g. '../../etc/passwd') from
+    // escaping lib.shardDir. Returns null on missing; throws ShardLibraryError
+    // (incl. ShardValidationError) on invalid id.
+    let shardPath;
+    try {
+      shardPath = locateShard(lib, row.id);
+    } catch (e) {
+      if (e instanceof ShardLibraryError) {
+        console.error(`[resolve-tasks] WARN: skipping task with unsafe id "${row.id}" in ${lib.indexPath}: ${e.message}`);
+        continue;
+      }
+      throw e;
+    }
     let shard = null;
-    if (fs.existsSync(shardPath)) {
+    if (shardPath !== null) {
       try { shard = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
       catch (e) {
         console.error(`[resolve-tasks] WARN: failed to parse shard ${shardPath}: ${e.message}. Falling back to INDEX summary (no description, no acceptance criteria).`);
       }
     } else {
-      console.error(`[resolve-tasks] WARN: shard ${shardPath} is missing; ${row.id} will dispatch with title-only body (no description, no acceptance criteria). Run \`npx tasklist-rebuild\` to repair.`);
+      console.error(`[resolve-tasks] WARN: shard for ${row.id} is missing under ${lib.shardDir}; will dispatch with title-only body (no description, no acceptance criteria). Run \`npx tasklist-rebuild\` to repair.`);
     }
     const title = (shard && shard.title) || row.title || row.id;
     const bodyParts = [`# ${row.id}: ${title}`, ''];
