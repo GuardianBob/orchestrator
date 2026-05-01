@@ -1,0 +1,16 @@
+{
+  "id": "TASK-003",
+  "title": "Seed task — backlog",
+  "description": "Fixture shard demonstrating the `backlog` state, blocked by an in-progress task.",
+  "status": "backlog",
+  "effort": "L",
+  "priority": "low",
+  "tags": ["fixture", "seed"],
+  "created": "2026-01-05T00:00:00.000Z",
+  "updated": "2026-01-05T00:00:00.000Z",
+  "started": null,
+  "completed": null,
+  "hours_estimate": 8,
+  "hours_actual": null,
+  "depends_on": ["TASK-002"]
+}
