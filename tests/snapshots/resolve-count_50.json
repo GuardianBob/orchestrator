@@ -1,0 +1,70 @@
+{
+  "target": "count:50",
+  "resolution": "count",
+  "totalAvailable": 7,
+  "queue": [
+    {
+      "id": "TASK-100",
+      "slug": "first-sharded-sprint-1-task",
+      "title": "First sharded sprint-1 task",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-100: First sharded sprint-1 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-1, fixture\n\n## Description\n\nFixture task for snapshot tests. Exercises the sharded code path under sprint-1.\n\n## Acceptance Criteria\n\n- Resolver emits this task with source=tasks\n- Body contains description and acceptance criteria"
+    },
+    {
+      "id": "TASK-101",
+      "slug": "second-sharded-sprint-1-task",
+      "title": "Second sharded sprint-1 task",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-101: Second sharded sprint-1 task\n\n**Priority:** medium  **Effort:** M\n**Tags:** sprint-1, fixture\n\n## Description\n\nSecond fixture sprint-1 task. Used to verify ordering within a library.\n\n## Acceptance Criteria\n\n- Appears second in the sharded library output"
+    },
+    {
+      "id": "TASK-300",
+      "slug": "sharded-sprint-3-task",
+      "title": "Sharded sprint-3 task",
+      "source": "tasks",
+      "sprintId": "3",
+      "sprintRangeEnd": null,
+      "body": "# TASK-300: Sharded sprint-3 task\n\n**Priority:** low  **Effort:** L\n**Tags:** sprint-3, fixture\n\n## Description\n\nSprint-3 sharded fixture. Should not appear in sprint-1 or sprint-4 queries.\n\n## Acceptance Criteria\n\n- Filtered out by sprint-1 / sprint-4 queries"
+    },
+    {
+      "id": "TASK-400",
+      "slug": "sharded-sprint-4-task",
+      "title": "Sharded sprint-4 task",
+      "source": "tasks",
+      "sprintId": "4",
+      "sprintRangeEnd": null,
+      "body": "# TASK-400: Sharded sprint-4 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-4, fixture\n\n## Description\n\nSprint-4 sharded fixture. Sole task in the sprint-4 query result.\n\n## Acceptance Criteria\n\n- Resolver returns exactly one task for sprint-4"
+    },
+    {
+      "id": "001",
+      "slug": "markdown-sprint-1-task-one",
+      "title": "Markdown sprint-1 task one",
+      "source": "TASKS.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "Body for the first markdown task. Demonstrates legacy 3-digit id format\nthat the `task-001` resolver target must match."
+    },
+    {
+      "id": "002",
+      "slug": "markdown-sprint-1-task-two",
+      "title": "Markdown sprint-1 task two",
+      "source": "TASKS.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "Second markdown sprint-1 task. Proves markdown + sharded merge under\nthe same sprint."
+    },
+    {
+      "id": "003",
+      "slug": "markdown-sprint-2-task",
+      "title": "Markdown sprint-2 task",
+      "source": "TASKS.md",
+      "sprintId": "2",
+      "sprintRangeEnd": null,
+      "body": "Sole sprint-2 task; sourced from markdown only."
+    }
+  ]
+}

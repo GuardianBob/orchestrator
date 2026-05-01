@@ -1,0 +1,14 @@
+{
+  "id": "TASK-300",
+  "title": "Sharded sprint-3 task",
+  "description": "Sprint-3 sharded fixture. Should not appear in sprint-1 or sprint-4 queries.",
+  "status": "backlog",
+  "effort": "L",
+  "priority": "low",
+  "tags": ["sprint-3", "fixture"],
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z",
+  "acceptance_criteria": [
+    "Filtered out by sprint-1 / sprint-4 queries"
+  ]
+}

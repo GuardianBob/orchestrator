@@ -1,0 +1,14 @@
+{
+  "id": "TASK-101",
+  "title": "Second sharded sprint-1 task",
+  "description": "Second fixture sprint-1 task. Used to verify ordering within a library.",
+  "status": "ready",
+  "effort": "M",
+  "priority": "medium",
+  "tags": ["sprint-1", "fixture"],
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z",
+  "acceptance_criteria": [
+    "Appears second in the sharded library output"
+  ]
+}
