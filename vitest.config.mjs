@@ -12,9 +12,19 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['scripts/**/*.mjs', 'lib/**/*.mjs'],
       exclude: ['tests/**', 'node_modules/**', 'coverage/**'],
-      // Thresholds intentionally OMITTED in this task to satisfy
-      // acceptance: "exits 0 on empty test set". Re-enable once
-      // first test files exist.
+      // Per-file thresholds: enabled for files that have first-class
+      // unit-test coverage. Other source files remain unthresholded
+      // (they are exercised via integration paths) so that the
+      // empty-test-set acceptance from TASK-001 still holds when
+      // no test file exists. See TASK-006.
+      thresholds: {
+        'scripts/shard-library.mjs': {
+          lines: 90,
+          branches: 90,
+          functions: 90,
+          statements: 90,
+        },
+      },
     },
   },
 });
