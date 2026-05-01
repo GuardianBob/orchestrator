@@ -1,0 +1,26 @@
+{
+  "title": "Unit tests for `shard-library.mjs` (all 6 APIs)",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "testing",
+    "sprint-shard-a"
+  ],
+  "description": "Create `tests/shard-library.test.mjs`. Cover every public API: `loadLibraries` (legacy synth, multi-library, malformed), `locateShard` (found, missing, wrong dir), `updateShard` (atomic write, mutator returning invalid shape, file-not-found), `rebuildLibrary` (success path mocked, failure path with non-zero exit), `resolveStatusVocab` (gen-tasklist, gen-issues, ambiguous enum, missing schema, statusMap override), `scanLinks` (explicit field, keyword scan, union, unknown prefix). Aim for ≥90% coverage on the helper module.",
+  "acceptance_criteria": [
+    "`npx vitest run tests/shard-library.test.mjs` exits 0",
+    "Coverage report shows ≥90% lines + branches for `scripts/shard-library.mjs`",
+    "Every error path has a negative test",
+    "Tests use fixtures from TASK-002, no external network"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:30.244Z",
+  "updated": "2026-05-01T19:10:55.289Z",
+  "id": "TASK-006",
+  "depends_on": [
+    "TASK-002",
+    "TASK-003",
+    "TASK-004",
+    "TASK-005"
+  ]
+}

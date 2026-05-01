@@ -1,0 +1,23 @@
+{
+  "title": "Create test fixtures for `.tasks/` and `.issues/`",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "foundation",
+    "sprint-shard-a",
+    "testing"
+  ],
+  "description": "Create `tests/fixtures/tasks-fixture/.tasks/` with: `INDEX.json` (3 sample tasks: backlog, in-progress, done), `tasks/TASK-001.json` through `TASK-003.json`, `schemas/task.schema.json` copied verbatim from `gen-tasklist`, `config.json`. Mirror under `tests/fixtures/issues-fixture/.issues/` with issue vocabulary (`open` / `in-progress` / `resolved`) and a sample issue. Document fixture provenance in `tests/fixtures/README.md`.",
+  "acceptance_criteria": [
+    "Both fixture directories validate against their respective schemas via ajv",
+    "Fixture schemas are byte-identical to upstream gen-tasklist + gen-issues source (provenance noted)",
+    "README documents how to refresh fixtures from upstream"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:23.305Z",
+  "updated": "2026-05-01T19:10:55.275Z",
+  "id": "TASK-002",
+  "depends_on": [
+    "TASK-001"
+  ]
+}

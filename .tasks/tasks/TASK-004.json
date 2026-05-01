@@ -1,0 +1,24 @@
+{
+  "title": "Implement `shard-library.mjs` rebuild + status inference",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "lib-core",
+    "sprint-shard-a"
+  ],
+  "description": "Add `rebuildLibrary(library)` (execSync with `library.rebuildCmd`, captures stderr, returns `{ ok, reason }` — never throws — emits actionable warning on non-zero exit suggesting install command). Add `resolveStatusVocab(library)` per PLAN.md §3b: if `library.statusMap` set → use it; else load schema, extract `status` enum, apply heuristic regex (`/^(in[-_]?progress|active|started|wip)$/i` for start, `/^(done|completed?|closed|resolved|fixed)$/i` for done); require exactly one match per role; throw actionable error otherwise. Cache result per library on first call.",
+  "acceptance_criteria": [
+    "`rebuildLibrary` never throws — returns `{ ok: false, reason }` on missing CLI",
+    "`resolveStatusVocab` returns `{ start: \"in-progress\", done: \"done\" }` for gen-tasklist schema",
+    "`resolveStatusVocab` returns `{ start: \"in-progress\", done: \"resolved\" }` for gen-issues schema",
+    "Throws with actionable message when 0 or >1 enum matches a role",
+    "Per-library cache survives multiple calls in same process"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:26.814Z",
+  "updated": "2026-05-01T19:10:55.282Z",
+  "id": "TASK-004",
+  "depends_on": [
+    "TASK-003"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "Integration test for `branch-setup.mjs`",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "testing",
+    "sprint-shard-b"
+  ],
+  "description": "Create `tests/integration/branch-setup.test.mjs`. Set up tmp git repo with `.tasks/` fixture. Run `branch-setup.mjs` against a backlog task → assert shard status, started timestamp, INDEX rebuild called. Run again with collision (manually flip shard to in-progress) → simulate user picking each of resume/restart/abandon → assert behavior. Run with rebuild CLI absent → assert warning but no failure.",
+  "acceptance_criteria": [
+    "All three collision branches verified",
+    "Rebuild-absence test passes (mock `npx tasklist-rebuild` to fail)",
+    "Test cleans up tmp git repo on completion (no test pollution)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:38.627Z",
+  "updated": "2026-05-01T19:10:55.303Z",
+  "id": "TASK-011",
+  "depends_on": [
+    "TASK-009",
+    "TASK-010"
+  ]
+}

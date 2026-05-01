@@ -1,0 +1,22 @@
+{
+  "title": "Update `README.md`",
+  "priority": "medium",
+  "effort": "S",
+  "tags": [
+    "docs",
+    "sprint-shard-d"
+  ],
+  "description": "Update `README.md` feature list to mention multi-library support + automatic shard write-back. Update Quickstart to show the new minimum config (single primary library). Add a \"Multi-library example\" snippet referencing `gen-tasklist` + `gen-issues` together.",
+  "acceptance_criteria": [
+    "Feature list mentions: multi-library, status write-back, cross-library linkage",
+    "Quickstart config example is valid + minimal",
+    "Multi-library example snippet matches TASK-017's example for consistency"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:49.089Z",
+  "updated": "2026-05-01T19:10:55.322Z",
+  "id": "TASK-018",
+  "depends_on": [
+    "TASK-017"
+  ]
+}

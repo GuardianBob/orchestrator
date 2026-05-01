@@ -1,0 +1,26 @@
+{
+  "title": "Live acceptance test against `issues-plugin` sprint-4",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "acceptance",
+    "sprint-shard-d"
+  ],
+  "description": "Run the 5-step FEAT_FIXES.md acceptance test against `C:/Coding/ai_dev/issues-plugin`: clean slate (`git checkout main && git branch -D sprint-4`); `/orchestrate sprint-4`; verify TASK-001 + TASK-002 shards show `done` + timestamps + notes; verify INDEX no longer lists them; re-run `/orchestrate sprint-4` → assert 0 tasks resolved. Capture full output to `acceptance-results-<date>.md`.",
+  "acceptance_criteria": [
+    "All 5 FEAT_FIXES.md test steps pass",
+    "If TASK-001 or TASK-002 references an ISSUE, the issue is also marked closed",
+    "Output captured to a dated file in repo root (gitignored)",
+    "Any deviation triggers a new bug task before closing this one"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:52.103Z",
+  "updated": "2026-05-01T19:10:55.327Z",
+  "id": "TASK-020",
+  "depends_on": [
+    "TASK-016",
+    "TASK-017",
+    "TASK-018",
+    "TASK-019"
+  ]
+}

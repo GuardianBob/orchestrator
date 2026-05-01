@@ -1,0 +1,24 @@
+{
+  "title": "Implement `shard-library.mjs` link scanner",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "lib-core",
+    "sprint-shard-a"
+  ],
+  "description": "Add `scanLinks(taskShard, allLibraries)` per PLAN.md §3c. Extract IDs from `taskShard[library.linkField]` (when defined) AND from keyword regex `/\\b(fix(?:es|ed)?|close[sd]?|resolve[sd]?)\\s+(ISSUE|TASK|BUG|FEAT)-\\d+/gi` over `description + notes`. Return `Map<libraryId, Set<shardId>>`. Match ID prefix against each library's shard naming convention (e.g., `ISSUE-NNN` belongs to library whose shards match that prefix). Skip + log unknown prefixes.",
+  "acceptance_criteria": [
+    "Returns empty map when no links found",
+    "Detects explicit `resolves: [\"ISSUE-042\"]` field correctly",
+    "Detects keyword phrases case-insensitively across description + notes",
+    "Unknown ID prefix (e.g., `FOO-001`) is skipped + logged at warn level",
+    "Union of explicit + keyword sources deduplicates"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:28.608Z",
+  "updated": "2026-05-01T19:10:55.285Z",
+  "id": "TASK-005",
+  "depends_on": [
+    "TASK-003"
+  ]
+}

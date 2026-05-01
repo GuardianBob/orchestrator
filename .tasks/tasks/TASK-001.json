@@ -1,0 +1,21 @@
+{
+  "title": "Bootstrap test infrastructure (vitest)",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "foundation",
+    "sprint-shard-a",
+    "testing"
+  ],
+  "description": "Add `vitest` as a devDependency. Create `vitest.config.mjs` with `testMatch: [\"tests/**/*.test.mjs\"]`, coverage thresholds `scripts/ >= 80%`, `lib/ >= 90%` (when `lib/` exists). Add npm scripts: `test`, `test:watch`, `test:coverage`. Update `package.json` `engines.node >= 20`. Verify `npx vitest run` exits 0 on empty test set.",
+  "acceptance_criteria": [
+    "`npx vitest run` exits 0 (no tests yet, no failure)",
+    "`npm test` is wired to `vitest run`",
+    "`package.json` engines.node is `>=20`",
+    "`vitest.config.mjs` is valid ESM (no CJS require)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:21.426Z",
+  "updated": "2026-05-01T19:10:21.426Z",
+  "id": "TASK-001"
+}

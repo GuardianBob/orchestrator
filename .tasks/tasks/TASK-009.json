@@ -1,0 +1,24 @@
+{
+  "title": "Add status flip to `branch-setup.mjs`",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "integration",
+    "sprint-shard-b"
+  ],
+  "description": "Modify `scripts/branch-setup.mjs`. After branch creation succeeds: locate primary-library shard via `locateShard`, read it, check status. If status is the inferred `done` value → exit non-zero with clear message. If status is the inferred `start` value → trigger collision prompt (TASK-010). Otherwise: call `updateShard` to set `status = start`, `started = now`, `updated = now`. Then call `rebuildLibrary` (resilient — Fix 3 already in helper).",
+  "acceptance_criteria": [
+    "New shard transitions backlog → in-progress with timestamps",
+    "Already-done shard exits with code 4 + clear message",
+    "Rebuild failure emits warning but doesn't block builder dispatch",
+    "Atomic write — interrupted run leaves shard either fully old or fully new, never partial"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:35.656Z",
+  "updated": "2026-05-01T19:10:55.297Z",
+  "id": "TASK-009",
+  "depends_on": [
+    "TASK-006",
+    "TASK-008"
+  ]
+}

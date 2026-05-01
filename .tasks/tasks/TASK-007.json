@@ -1,0 +1,22 @@
+{
+  "title": "Update `load-config.mjs` to expose `shardLibraries`",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "integration",
+    "sprint-shard-a"
+  ],
+  "description": "Modify `scripts/load-config.mjs`. After existing config load, call `loadLibraries(configPath)` from `shard-library.mjs` and attach result as `config.shardLibraries`. Preserve legacy `config.tasksSource` for any other consumer that may read it. Document the new field in inline comments.",
+  "acceptance_criteria": [
+    "Existing callers of `load-config.mjs` see no change in legacy fields",
+    "`config.shardLibraries` is always an array (length ≥ 1) after load",
+    "A config with neither `shardLibraries` nor `tasksSource.primary` throws a clear error"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:31.880Z",
+  "updated": "2026-05-01T19:10:55.292Z",
+  "id": "TASK-007",
+  "depends_on": [
+    "TASK-003"
+  ]
+}

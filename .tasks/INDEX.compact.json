@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "generator": "tasklist-rebuild@1.0.0",
+  "updated": "2026-05-01T19:16:09.101Z",
+  "next_task_id": "TASK-023",
+  "counts": {
+    "total": 22,
+    "backlog": 22,
+    "ready": 0,
+    "in_progress": 0,
+    "blocked": 0,
+    "review": 0,
+    "done": 0,
+    "cancelled": 0,
+    "open": 22,
+    "closed": 0,
+    "archived": 0
+  },
+  "previous_task": null,
+  "current_task": null,
+  "next_task": {
+    "id": "TASK-001",
+    "title": "Bootstrap test infrastructure (vitest)",
+    "status": "backlog"
+  },
+  "blocked_top": [],
+  "truncated": {
+    "open_tasks": 22,
+    "blocked_tasks": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "title": "Rewrite `skill/SKILL.md` Configuration section",
+  "priority": "medium",
+  "effort": "M",
+  "tags": [
+    "docs",
+    "sprint-shard-d"
+  ],
+  "description": "Update `skill/SKILL.md` §\"Configuration reference\" with the new `shardLibraries[]` config shape. Add new top-level §\"Shard Library Integration\" covering: status inference rules + heuristics + override path; cross-library link detection (explicit field + keyword regex); resilience model when rebuild CLI is absent; troubleshooting table for common errors (ambiguous status enum, unknown link target, missing schema). Include a complete `.orchestrator.json` example with both `tasks` and `issues` libraries.",
+  "acceptance_criteria": [
+    "New §\"Shard Library Integration\" present",
+    "Config example is valid JSON + matches the schema in TASK-007",
+    "Troubleshooting table covers: ambiguous-enum, missing-schema, unknown-link, missing-rebuild-CLI",
+    "Backward-compat note explains legacy `tasksSource.primary` still works"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:47.559Z",
+  "updated": "2026-05-01T19:10:55.320Z",
+  "id": "TASK-017",
+  "depends_on": [
+    "TASK-016"
+  ]
+}
