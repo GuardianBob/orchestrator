@@ -9,6 +9,7 @@
 // WRITE CONTRACT (LD-ARC-002):
 //   - This module writes individual shard files only. It NEVER writes INDEX.json.
 //   - INDEX.json is a derived view; rebuild it via library.rebuildCmd (TASK-004).
+//   - rebuildLibrary() shells out to that CLI; it does not author INDEX.json itself.
 //
 // PATH CONTRACT (LD-XPL-001):
 //   - Every path constructed via path.join / path.resolve. No string concat.
@@ -23,6 +24,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 // ---------------------------------------------------------------------------
 // Typed errors
@@ -61,12 +63,17 @@ export class ShardValidationError extends ShardLibraryError {
 // ---------------------------------------------------------------------------
 
 const _cache = new Map(); // absoluteConfigPath -> ShardLibrary[]
+let _statusVocabCache = new WeakMap(); // ShardLibrary -> { start, done }
 
 /**
- * Test-only: clear the loadLibraries cache. Do not call from production code.
+ * Test-only: clear the loadLibraries cache and the resolveStatusVocab cache.
+ * Do not call from production code.
  * @returns {void}
  */
-export function __resetCache() { _cache.clear(); }
+export function __resetCache() {
+  _cache.clear();
+  _statusVocabCache = new WeakMap();
+}
 
 function debugWarn(...args) {
   if (process.env.DEBUG_SHARD_LIBRARY) console.warn('[shard-library]', ...args);
@@ -221,6 +228,127 @@ export function updateShard(library, id, mutator) {
   return next;
 }
 
+/**
+ * Invoke library.rebuildCmd via execSync to regenerate INDEX.json.
+ * NEVER throws. Captures stderr. Emits an actionable console.warn on failure
+ * so operators see install hints / non-zero exits without grepping return values.
+ *
+ * Honors LD-ARC-002 (this module never writes INDEX.json itself; it shells out
+ * to the configured rebuild CLI) and LD-BUG-010 (no process.exit in lib code).
+ *
+ * @param {ShardLibrary} library  Library handle from loadLibraries.
+ * @returns {{ ok: true } | { ok: false, reason: string }}
+ *          Result object. `ok: false` includes a human-readable reason; the
+ *          same reason text is also emitted via console.warn (except for the
+ *          intentional null-rebuildCmd opt-out, which warns nothing).
+ * @throws {never} This function does not throw under any circumstance.
+ */
+export function rebuildLibrary(library) {
+  // 1. No command configured — operator opted out, silent skip.
+  const cmd = library?.rebuildCmd;
+  if (cmd === null || cmd === undefined || (typeof cmd === 'string' && cmd.length === 0)) {
+    return { ok: false, reason: `library '${library?.id ?? '<unknown>'}' has no rebuildCmd configured` };
+  }
+
+  try {
+    execSync(cmd, {
+      cwd: library.indexDir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    });
+    return { ok: true };
+  } catch (e) {
+    const stderr = (e && e.stderr ? e.stderr.toString() : '').trim();
+    const stderrLc = stderr.toLowerCase();
+    const isEnoent =
+      (e && e.code === 'ENOENT') ||
+      stderrLc.includes('not recognized') ||
+      stderrLc.includes('not found') ||
+      stderrLc.includes('command not found');
+
+    let reason;
+    if (isEnoent) {
+      // Best-effort install hint: strip leading "npx " / "node ", take first token.
+      const stripped = String(cmd).replace(/^\s*(?:npx|node)\s+/i, '').trim();
+      const guess = stripped.split(/\s+/)[0] || cmd;
+      reason =
+        `rebuild CLI not found for library '${library.id}'. ` +
+        `Install it (e.g. \`npm i -g ${guess}\`) or fix rebuildCmd ` +
+        `(configured: "${cmd}")`;
+    } else if (typeof e?.status === 'number') {
+      const tail = (stderr || '(no stderr)').slice(0, 500);
+      reason = `rebuild for library '${library.id}' exited ${e.status}: ${tail}`;
+    } else {
+      reason = `rebuild for library '${library.id}' failed: ${e?.message ?? String(e)}`;
+    }
+    console.warn(`[shard-library] ${reason}`);
+    return { ok: false, reason };
+  }
+}
+
+/**
+ * Resolve the `{ start, done }` status vocabulary for a library.
+ *
+ * Resolution order:
+ *   1. If `library.statusMap` has both `start` and `done` (non-empty strings),
+ *      validate shape and return it as-is. Operator override is authoritative
+ *      and is NOT cross-checked against the schema enum (LD-PAT-007).
+ *   2. Otherwise load `library.schemaPath`, extract `properties.status.enum`,
+ *      and apply the start/done heuristic regexes. Exactly one match per role
+ *      is required.
+ *
+ * Result is cached per library object identity (WeakMap) for the process
+ * lifetime; only `__resetCache()` invalidates it. Single source of truth
+ * (LD-ARC-001) — other modules MUST call this rather than re-deriving.
+ *
+ * @param {ShardLibrary} library  Library handle from loadLibraries.
+ * @returns {{ start: string, done: string }}
+ * @throws {ShardLibraryError}    statusMap partially set or non-string values;
+ *                                schema file missing/unreadable; enum missing
+ *                                or empty; 0 or >1 heuristic matches per role.
+ * @throws {ShardValidationError} Schema file contains malformed JSON.
+ */
+export function resolveStatusVocab(library) {
+  if (!library || typeof library !== 'object') {
+    throw new ShardLibraryError('resolveStatusVocab: library must be an object');
+  }
+  const cached = _statusVocabCache.get(library);
+  if (cached) return cached;
+
+  const libId = library.id ?? '<unknown>';
+  const sm = library.statusMap;
+
+  // 1. Operator override path
+  if (sm !== null && sm !== undefined) {
+    if (typeof sm !== 'object') {
+      throw new ShardLibraryError(
+        `library '${libId}'.statusMap must be an object with 'start' and 'done' string keys`
+      );
+    }
+    const hasStart = typeof sm.start === 'string' && sm.start.length > 0;
+    const hasDone  = typeof sm.done  === 'string' && sm.done.length  > 0;
+    if (hasStart && hasDone) {
+      const out = { start: sm.start, done: sm.done };
+      _statusVocabCache.set(library, out);
+      return out;
+    }
+    // Partial / invalid — refuse to guess (LD-PAT-007 validate-all-or-abort)
+    const present = Object.keys(sm).join(', ') || '(none)';
+    throw new ShardLibraryError(
+      `library '${libId}'.statusMap must define both 'start' and 'done' as non-empty strings ` +
+      `(got keys: ${present}). Set both, or remove statusMap to use the schema heuristic.`
+    );
+  }
+
+  // 2. Schema heuristic path
+  const enumVals = _loadStatusEnum(library);
+  const start = _matchOne(enumVals, START_RE, 'start', libId, library.schemaPath);
+  const done  = _matchOne(enumVals, DONE_RE,  'done',  libId, library.schemaPath);
+  const out = { start, done };
+  _statusVocabCache.set(library, out);
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -230,6 +358,12 @@ export function updateShard(library, id, mutator) {
 // "TASK001" (no hyphen), "TASK-1.json" (extension), "TASK-1/x" (separator).
 // Anchors + restricted character class together prevent path traversal and absolute paths.
 const SAFE_SHARD_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
+
+// Status-vocab heuristics (resolveStatusVocab). Anchored, case-insensitive.
+// Match common start-states (in-progress / active / wip / started) and
+// terminal states (done / completed / closed / resolved / fixed).
+const START_RE = /^(in[-_]?progress|active|started|wip)$/i;
+const DONE_RE  = /^(done|completed?|closed|resolved|fixed)$/i;
 
 function validateShardId(id) {
   if (typeof id !== 'string' || id.length === 0) {
@@ -350,4 +484,71 @@ function validateShardShape(shard, sourcePath) {
       `Field "updated" must be ISO-8601 timestamp, got "${shard.updated}" in ${sourcePath}`
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Status-vocab helpers (resolveStatusVocab)
+// ---------------------------------------------------------------------------
+
+function _loadStatusEnum(library) {
+  const libId = library.id ?? '<unknown>';
+  const schemaPath = library.schemaPath;
+  if (typeof schemaPath !== 'string' || schemaPath.length === 0) {
+    throw new ShardLibraryError(
+      `Cannot resolve status vocab for library '${libId}': no schemaPath set. ` +
+      `Set statusMap in .orchestrator.json or provide schemaPath.`
+    );
+  }
+  if (!fs.existsSync(schemaPath)) {
+    throw new ShardLibraryError(
+      `Cannot resolve status vocab for library '${libId}': schema not found at ${schemaPath}. ` +
+      `Set statusMap in .orchestrator.json or provide schemaPath.`
+    );
+  }
+
+  let raw, schema;
+  try {
+    raw = fs.readFileSync(schemaPath, 'utf8');
+  } catch (e) {
+    throw new ShardLibraryError(
+      `Cannot read schema for library '${libId}' at ${schemaPath}: ${e.message}. ` +
+      `Set statusMap in .orchestrator.json to bypass schema reads.`
+    );
+  }
+  try {
+    schema = JSON.parse(raw);
+  } catch (e) {
+    throw new ShardValidationError(`Invalid JSON in ${schemaPath}: ${e.message}`);
+  }
+
+  const enumVals = schema?.properties?.status?.enum;
+  if (!Array.isArray(enumVals) || !enumVals.every((v) => typeof v === 'string')) {
+    throw new ShardLibraryError(
+      `Schema at ${schemaPath} has no \`properties.status.enum\` string array; ` +
+      `cannot infer status vocab for library '${libId}'. Set statusMap explicitly.`
+    );
+  }
+  return enumVals;
+}
+
+function _matchOne(enumVals, regex, role, libId, schemaPath) {
+  const matches = enumVals.filter((v) => regex.test(v));
+  if (matches.length === 1) return matches[0];
+
+  const enumStr = JSON.stringify(enumVals);
+  const remediation =
+    `Set \`statusMap\` for library '${libId}' in .orchestrator.json, ` +
+    `e.g. "statusMap": { "start": "...", "done": "..." }.`;
+
+  if (matches.length === 0) {
+    throw new ShardLibraryError(
+      `Cannot infer '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
+      `no enum value matched ${regex} (enum: ${enumStr}). ${remediation}`
+    );
+  }
+  throw new ShardLibraryError(
+    `Ambiguous '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
+    `${matches.length} enum values matched ${regex} → ${JSON.stringify(matches)} ` +
+    `(enum: ${enumStr}). ${remediation}`
+  );
 }
