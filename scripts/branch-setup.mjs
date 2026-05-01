@@ -29,6 +29,7 @@ import {
   ShardLibraryError,
   ShardValidationError,
 } from './shard-library.mjs';
+import { promptCollisionChoice, buildRestartedShard } from '../lib/collision-prompt.mjs';
 
 // ---------------------------------------------------------------------------
 // LD-PAT-005 — isMain guard (ported inline; no lib/is-main.mjs in repo)
@@ -67,6 +68,7 @@ function parseArgs(argv) {
     slug: null,
     'no-status-flip': false,
     'no-rebuild': false,
+    'non-interactive': false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -76,6 +78,7 @@ function parseArgs(argv) {
       case '--slug':           flags.slug   = requireValue('--slug',   argv[++i]); break;
       case '--no-status-flip': flags['no-status-flip'] = true; break;
       case '--no-rebuild':     flags['no-rebuild']     = true; break;
+      case '--non-interactive': flags['non-interactive'] = true; break;
       case '--help':
       case '-h':
         flags.help = true;
@@ -89,7 +92,7 @@ function parseArgs(argv) {
 
 function printHelp() {
   process.stderr.write(
-    'Usage: branch-setup.mjs --sprint <N> --task <id> --slug <slug> [--no-status-flip] [--no-rebuild]\n' +
+    'Usage: branch-setup.mjs --sprint <N> --task <id> --slug <slug> [--no-status-flip] [--no-rebuild] [--non-interactive]\n' +
     '\n' +
     'Creates sprint + task git branches and flips the primary shard library\n' +
     '(default: tasks) from its initial status into vocab.start (e.g. in-progress).\n' +
@@ -102,6 +105,7 @@ function printHelp() {
     'Optional:\n' +
     '  --no-status-flip      skip the entire shard-flip + rebuild step\n' +
     '  --no-rebuild          flip the shard but skip rebuildLibrary()\n' +
+    '  --non-interactive     refuse all prompts; abandon on collision (exit 4)\n' +
     '  -h, --help            print this help\n'
   );
 }
@@ -339,11 +343,61 @@ async function main() {
     case 'not-found':
       process.stderr.write(`[branch-setup] shard ${taskId} not found in primary library; skipping status flip\n`);
       break;
-    case 'already-at-start':
+    case 'already-at-start': {
+      const isInteractive = process.stdin.isTTY === true && !args['non-interactive'];
+      const primary = libraries.find((l) => l && l.primary === true);
+      const shardPath = primary ? locateShard(primary, taskId) : null;
+      let current = null;
+      if (shardPath) {
+        try {
+          current = JSON.parse(fs.readFileSync(shardPath, 'utf8'));
+        } catch {
+          current = null;
+        }
+      }
+      const choice = await promptCollisionChoice({
+        taskId,
+        currentStarted: current ? current.started : null,
+        currentStatus: current ? current.status : null,
+        isInteractive,
+      });
+      if (choice === 'resume') {
+        process.stderr.write(
+          `[branch-setup] collision: resuming ${taskId} (preserving started timestamp)\n`
+        );
+        statusFlip = { flipped: false, reason: 'collision-resumed', choice };
+        break;
+      }
+      if (choice === 'restart') {
+        const nowIso = new Date().toISOString();
+        try {
+          updateShard(primary, taskId, (cur) => buildRestartedShard(cur, nowIso));
+        } catch (e) {
+          process.stderr.write(`[branch-setup] restart write failed: ${e.message}\n`);
+          statusFlip = { flipped: false, reason: `restart-io-error:${e.message}`, choice };
+          console.log(JSON.stringify(
+            { sprintBranch, taskBranch, baseBranch,
+              current: sh('git branch --show-current'), statusFlip },
+            null, 2));
+          process.exit(6);
+        }
+        let rebuild = null;
+        if (!args['no-rebuild']) rebuild = rebuildLibrary(primary);
+        process.stderr.write(`[branch-setup] collision: restarted ${taskId}\n`);
+        statusFlip = { flipped: true, reason: 'collision-restarted', choice, rebuild };
+        break;
+      }
+      // choice === 'abandon'
       process.stderr.write(
-        `[branch-setup] shard ${taskId} already at vocab.start; collision handling deferred to TASK-010\n`
+        `[branch-setup] collision: abandoning ${taskId} per operator choice\n`
       );
-      break;
+      statusFlip = { flipped: false, reason: 'collision-abandoned', choice };
+      console.log(JSON.stringify(
+        { sprintBranch, taskBranch, baseBranch,
+          current: sh('git branch --show-current'), statusFlip },
+        null, 2));
+      process.exit(4);
+    }
     case 'already-done':
       process.stderr.write(`[branch-setup] shard ${taskId} is done; refusing to start\n`);
       console.log(JSON.stringify(
