@@ -11,3 +11,4 @@
 | 2026-05-01T20:44 | 006 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:tasksLibrary()/issuesLibrary() factories hand-construct the ShardLibrary shape produced by the internal _normalizeLibrary. If that internal contract drifts (new required field), the factories sil |
 | 2026-05-01T20:47 | 007 | 1 | pass | skip | skip | approve,approve,approve | PASS |  |
 | 2026-05-01T21:47 | 008 | 2 | pass | skip | skip | approve,approve,approve | PASS |  |
+| 2026-05-01T22:35 | 009 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:API contract preservation: pre-TASK-009 callers using only --sprint/--task/--slug continue to work. New --no-status-flip and --no-rebuild default to false (flip+rebuild ON), which is the intended |

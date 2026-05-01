@@ -23,3 +23,5 @@
 - [2026-05-01] Completed task-007: expose shardLibraries on loaded config
 
 - [2026-05-01] Completed task-008: test(task-008): migrate snapshot tests to controlled fixture
+
+- [2026-05-01] Completed task-009: Add status flip to branch-setup.mjs
