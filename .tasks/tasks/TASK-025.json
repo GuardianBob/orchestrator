@@ -1,0 +1,21 @@
+{
+  "title": "Document shard library config trust boundary",
+  "priority": "low",
+  "effort": "XS",
+  "tags": [
+    "docs",
+    "security",
+    "sprint-1-followup"
+  ],
+  "description": "loadLibraries() does not validate that lib.indexPath / lib.shardDir are contained within the repo root. They originate from .orchestrator.json (repo-owned) so this is a known trust boundary. Document this explicitly in PLAN.md §3a (security note) and in the JSDoc for loadLibraries.",
+  "acceptance_criteria": [
+    "PLAN.md §3a includes a 'Trust boundary' subsection or note",
+    "loadLibraries JSDoc mentions the trust boundary",
+    "No code change"
+  ],
+  "status": "backlog",
+  "depends_on": [],
+  "created": "2026-05-01T22:06:48.545Z",
+  "updated": "2026-05-01T22:06:48.545Z",
+  "id": "TASK-025"
+}

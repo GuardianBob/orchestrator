@@ -1,0 +1,21 @@
+{
+  "title": "Document PLAN §3 Case-B .md synthesizer deviation",
+  "priority": "low",
+  "effort": "XS",
+  "tags": [
+    "docs",
+    "tech-debt",
+    "sprint-1-followup"
+  ],
+  "description": "PLAN.md §3 line 126 specifies the loadLibraries() synthesizer behavior for legacy configs. The actual implementation in scripts/shard-library.mjs deviates slightly for the .md case-B path. Update PLAN.md to reflect the as-built behavior, OR adjust the implementation to match the spec — pick the simpler fix.",
+  "acceptance_criteria": [
+    "PLAN.md §3 and scripts/shard-library.mjs synthesizer agree on .md case-B behavior",
+    "If implementation changes, all 80 existing tests still pass",
+    "If only docs change, no code modified"
+  ],
+  "status": "backlog",
+  "depends_on": [],
+  "created": "2026-05-01T22:06:34.402Z",
+  "updated": "2026-05-01T22:06:34.402Z",
+  "id": "TASK-023"
+}
