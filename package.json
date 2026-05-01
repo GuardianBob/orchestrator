@@ -1,0 +1,17 @@
+{
+  "name": "orchestrator-skill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Sub-agent team orchestration skill (build → review → merge loop).",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0",
+    "@vitest/coverage-v8": "^2.1.0"
+  }
+}
