@@ -1,0 +1,22 @@
+{
+  "title": "Post-launch monitoring task (placeholder)",
+  "priority": "low",
+  "effort": "XS",
+  "tags": [
+    "post-launch",
+    "sprint-shard-d"
+  ],
+  "description": "Placeholder backlog task: monitor first 3 real `/orchestrate` runs against `issues-plugin` after release. Capture any unexpected behavior (status inference misses, link scanner false positives, rebuild failures in unusual env) and create follow-up bug tasks. Close this task after 3 successful runs OR after 7 days, whichever comes first.",
+  "acceptance_criteria": [
+    "3 real-world orchestrator runs documented OR 7-day window elapsed",
+    "Any anomaly captured as a separate bug task",
+    "Closure note summarizes \"shipped clean\" or lists follow-ups"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:55.181Z",
+  "updated": "2026-05-01T19:10:55.334Z",
+  "id": "TASK-022",
+  "depends_on": [
+    "TASK-021"
+  ]
+}

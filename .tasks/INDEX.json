@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "generator": "tasklist-rebuild@1.0.0",
+  "updated": "2026-05-01T19:16:09.101Z",
+  "next_task_id": "TASK-023",
+  "previous_task": null,
+  "current_task": null,
+  "next_task": {
+    "id": "TASK-001",
+    "title": "Bootstrap test infrastructure (vitest)",
+    "status": "backlog",
+    "effort": "S",
+    "priority": "high",
+    "depends_on": []
+  },
+  "open_tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Bootstrap test infrastructure (vitest)",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "foundation",
+        "sprint-shard-a",
+        "testing"
+      ]
+    },
+    {
+      "id": "TASK-002",
+      "title": "Create test fixtures for `.tasks/` and `.issues/`",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "foundation",
+        "sprint-shard-a",
+        "testing"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "lib-core",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Implement `shard-library.mjs` rebuild + status inference",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "lib-core",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Implement `shard-library.mjs` link scanner",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "lib-core",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Unit tests for `shard-library.mjs` (all 6 APIs)",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "testing",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Update `load-config.mjs` to expose `shardLibraries`",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Migrate `resolve-tasks.mjs` to use `loadLibraries()`",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-a"
+      ]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add status flip to `branch-setup.mjs`",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-b"
+      ]
+    },
+    {
+      "id": "TASK-010",
+      "title": "Implement collision prompt (resume / restart / abandon)",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-b"
+      ]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Integration test for `branch-setup.mjs`",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "testing",
+        "sprint-shard-b"
+      ]
+    },
+    {
+      "id": "TASK-012",
+      "title": "Add primary-shard close to `merge-task.mjs`",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-c"
+      ]
+    },
+    {
+      "id": "TASK-013",
+      "title": "Add cross-library link closing to `merge-task.mjs`",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-c"
+      ]
+    },
+    {
+      "id": "TASK-014",
+      "title": "Commit `.tasks/` and `.issues/` deltas onto sprint branch",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "integration",
+        "sprint-shard-c"
+      ]
+    },
+    {
+      "id": "TASK-015",
+      "title": "Integration test for `merge-task.mjs` with linkage",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "high",
+      "tags": [
+        "testing",
+        "sprint-shard-c"
+      ]
+    },
+    {
+      "id": "TASK-016",
+      "title": "Regression test: re-run sprint completes 0 tasks",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "testing",
+        "sprint-shard-c"
+      ]
+    },
+    {
+      "id": "TASK-017",
+      "title": "Rewrite `skill/SKILL.md` Configuration section",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "sprint-shard-d"
+      ]
+    },
+    {
+      "id": "TASK-018",
+      "title": "Update `README.md`",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "sprint-shard-d"
+      ]
+    },
+    {
+      "id": "TASK-019",
+      "title": "Audit `commands/*.md` for behavior changes",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "sprint-shard-d"
+      ]
+    },
+    {
+      "id": "TASK-020",
+      "title": "Live acceptance test against `issues-plugin` sprint-4",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "acceptance",
+        "sprint-shard-d"
+      ]
+    },
+    {
+      "id": "TASK-021",
+      "title": "Tag release v1.x.0",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "medium",
+      "tags": [
+        "release",
+        "sprint-shard-d"
+      ]
+    },
+    {
+      "id": "TASK-022",
+      "title": "Post-launch monitoring task (placeholder)",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "post-launch",
+        "sprint-shard-d"
+      ]
+    }
+  ],
+  "blocked_tasks": [],
+  "counts": {
+    "total": 22,
+    "backlog": 22,
+    "ready": 0,
+    "in_progress": 0,
+    "blocked": 0,
+    "review": 0,
+    "done": 0,
+    "cancelled": 0,
+    "open": 22,
+    "closed": 0,
+    "archived": 0
+  },
+  "effort_summary": {
+    "open_hours": 51,
+    "closed_estimate_hours": 0,
+    "closed_actual_hours": 0,
+    "estimate_accuracy": null
+  },
+  "project_root": "C:\\Coding\\ai_dev\\orchestrator"
+}

@@ -1,0 +1,25 @@
+{
+  "title": "Add cross-library link closing to `merge-task.mjs`",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "integration",
+    "sprint-shard-c"
+  ],
+  "description": "After TASK-012's primary close: call `scanLinks(taskShard, config.shardLibraries)` to find all referenced linked-library shards. For each `(libraryId, shardId)` in the result map: validate the shard exists in the linked library's INDEX (skip + warn on unknown), call `updateShard` with mutator that sets the inferred done status, sets `completed = now`, appends `notes` entry `[<date>] Resolved by <taskId> @ <mergeSha>`. After all linked shards updated, call `rebuildLibrary` once per affected library.",
+  "acceptance_criteria": [
+    "Task with `Resolves ISSUE-042` keyword closes ISSUE-042",
+    "Task with explicit `resolves: [\"ISSUE-073\"]` closes ISSUE-073",
+    "Both sources combined dedupe correctly",
+    "Unknown linked ID logs warning but doesn't fail merge",
+    "Each linked library rebuilt at most once per merge (not once per shard)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:41.729Z",
+  "updated": "2026-05-01T19:10:55.310Z",
+  "id": "TASK-013",
+  "depends_on": [
+    "TASK-012",
+    "TASK-005"
+  ]
+}

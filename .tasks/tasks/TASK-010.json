@@ -1,0 +1,23 @@
+{
+  "title": "Implement collision prompt (resume / restart / abandon)",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "integration",
+    "sprint-shard-b"
+  ],
+  "description": "When `branch-setup.mjs` finds shard already at the inferred start status: invoke the existing `notify.mjs` + question-tool pattern (mirrors `review-sprint.mjs`). Three options per PLAN.md §3e: **resume** (preserve `started`, proceed), **restart** (overwrite `started`, append notes entry \"Restarted by orchestrator on <date>\"), **abandon** (exit non-zero, no dispatch). Non-interactive default = abandon (matches FEAT_FIXES.md hard-refuse fallback).",
+  "acceptance_criteria": [
+    "Prompt fires only when shard is at inferred start status (not other states)",
+    "All three options behave correctly (verified via integration test)",
+    "Non-interactive run defaults to abandon with code 4",
+    "Restart appends notes entry without overwriting prior notes"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:37.086Z",
+  "updated": "2026-05-01T19:10:55.300Z",
+  "id": "TASK-010",
+  "depends_on": [
+    "TASK-009"
+  ]
+}

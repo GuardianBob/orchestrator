@@ -1,0 +1,23 @@
+{
+  "title": "Commit `.tasks/` and `.issues/` deltas onto sprint branch",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "integration",
+    "sprint-shard-c"
+  ],
+  "description": "After TASK-012 + TASK-013 mutations: stage all modified shard library directories (any `.{plugin}/` whose `library.indexPath` was touched). Commit with message `chore(orchestrator): close <taskId> + linked shards [<sha>]`. This is a separate commit on the sprint branch, after the merge commit, before the existing living-docs commit.",
+  "acceptance_criteria": [
+    "Single commit captures all shard + INDEX changes from both TASK-012 + TASK-013",
+    "Commit message includes task ID + merge SHA for traceability",
+    "No-op commit suppressed (e.g., when nothing changed because rebuild failed and shards are already correct)",
+    "Living-docs commit (existing behavior) still runs after"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:43.203Z",
+  "updated": "2026-05-01T19:10:55.313Z",
+  "id": "TASK-014",
+  "depends_on": [
+    "TASK-013"
+  ]
+}

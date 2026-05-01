@@ -1,0 +1,22 @@
+{
+  "title": "Tag release v1.x.0",
+  "priority": "medium",
+  "effort": "XS",
+  "tags": [
+    "release",
+    "sprint-shard-d"
+  ],
+  "description": "After live acceptance passes: bump `package.json` version (minor bump — additive backward-compat feature). Commit. Tag `v1.x.0`. Push tag. Update `CHANGELOG.md` (or create one) with summary of the change + decision-log link.",
+  "acceptance_criteria": [
+    "`package.json` version bumped per semver (minor)",
+    "Tag pushed to remote",
+    "CHANGELOG entry summarizes user-facing changes only (no implementation detail)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:53.602Z",
+  "updated": "2026-05-01T19:10:55.331Z",
+  "id": "TASK-021",
+  "depends_on": [
+    "TASK-020"
+  ]
+}

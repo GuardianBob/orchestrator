@@ -10,8 +10,8 @@ You are running a multi-agent ticket-completion loop. Your job is to coordinate,
 ## Activation
 
 This skill activates when:
-- User runs `/orchestrate <target>` (target = task ID like `task-42` or bare `42`, `sprint-N`, `count:N`, or `next`).
-- User says: "have the team build…", "run next N tickets", "execute sprint 3", "complete the next task and stop", etc.
+- User runs `/orchestrate <target>` (target = task ID like `task-42` or bare `42`, `sprint-N`, `count:N`, `next`, `review-sprint`, or `review-sprint-N`).
+- User says: "have the team build…", "run next N tickets", "execute sprint 3", "complete the next task and stop", "review the last sprint", "look at sprint-2 for missed tasks", etc.
 
 If the slash command was used, the target argument is already in the prompt. Otherwise extract the target from the user's message and confirm if ambiguous.
 
@@ -35,6 +35,44 @@ Show the user the JSON result, then advise them to:
 3. Add tasks to `TASKLIST.md` under a `## Sprint N` header before running `/orchestrate sprint-N`.
 
 Then **STOP.** Do not proceed to Step 1.
+
+## Step 0b — Review-sprint shortcut
+
+If the target is `review-sprint` (latest completed sprint) or `review-sprint-<N>`, this is a **post-sprint audit** invocation. You are NOT dispatching builders or reviewers. You are reading sprint artifacts, finding work that has no task yet, and interactively adding it to `TASKLIST.md`.
+
+```
+node {SKILL_DIR}/../scripts/review-sprint.mjs --sprint <N>
+```
+
+(Omit `--sprint` to auto-detect the latest sprint from `.orchestrator/state.json`, then `.orchestrator/sprints/sprint-*-complete.md`, then git branches.)
+
+The script returns a JSON bundle with:
+- `deferredSections[]` — every "Deferred", "Backlog", "Follow-up", "Known Issues", "Tech Debt", "Cleanup", "TODO" section parsed out of `sprint-<N>-complete.md`.
+- `reviewerFindings[]` — every finding from `.orchestrator/reviews/task-*-attempt-*-*.json` for this sprint.
+- `gateFailures[]` — any failed-gate residue from `.orchestrator/gates/`.
+- `taskCount.nextProposedId` — the next free task id, zero-padded.
+
+**Then follow this workflow** (this is the proven pattern from prior sessions):
+
+1. **Cross-reference** every deferred bullet, finding, and gate failure against existing tasks in `TASKLIST.md`. Group items into three buckets:
+   - **Already covered** — note the existing task id, skip.
+   - **Gaps requiring new tasks** — list with proposed id, severity, target sprint, location.
+   - **Out-of-scope** — bugs in the orchestrator skill itself, or items the user has explicitly punted; note but don't propose.
+2. **Group cohesive items into bundles** where they touch the same files or share a dependency chain (e.g., 3 small CI hardening items → one bundled task). Atomic items stay atomic.
+3. **Propose target sprint** for each new task: highest-severity items that block the *next* sprint's exit criteria → next sprint; medium → sprint after; low → final cleanup phase.
+4. **Use the `question` tool** to ask the user (one batched call, multiple questions when sensible):
+   - Confirm: which proposed tasks to add (all / Sprint-N only / show diff first).
+   - Confirm: bundle vs split for any borderline groupings.
+   - Ask any task-specific clarifications you genuinely need (severity, owner, dependency ordering). **Do not invent answers** — if the deferred bullet is ambiguous, ask.
+5. **Apply the additions** to `TASKLIST.md` using the `edit` tool, inserting each new task under its target sprint header in the standard task body format (Maps to / Severity / Owner / Effort / Location / Detail / Steps / Depends on). Update the Summary table totals.
+6. **Notify completion**: `node {SKILL_DIR}/../scripts/notify.mjs --title "Sprint <N> review complete" --body "Added <count> new tasks to TASKLIST.md" --reason approval`.
+
+**Critical constraints for review-sprint:**
+- **Never auto-add tasks without user confirmation.** The proven pattern is: propose → ask → apply.
+- **Never modify code, branches, or living docs other than TASKLIST.md** during a review-sprint pass. This is a planning operation.
+- **Never dispatch builder/reviewer agents** during review-sprint.
+- **If the bundle returns `completionReportFound: false`**, tell the user the report is missing, ask whether they want you to (a) generate one from `STATUS_SUMMARY.md` + `REVIEW_LOG.md` + reviewer JSON, or (b) abort.
+- **STOP** after the additions are applied (or the user declines). Do not chain into a sprint run.
 
 ## Step 1 — Load project config
 
@@ -152,7 +190,20 @@ Run `node {SKILL_DIR}/../scripts/notify.mjs --title "Task <id> merged" --body "<
 
 When all tasks in a sprint are done:
 1. Run `node {SKILL_DIR}/../scripts/notify.mjs --title "Sprint <N> complete" --body "All <count> tasks merged into sprint-<N>. Approve merge to main?" --reason approval`.
-2. **STOP.** Do not auto-merge sprint into main. Wait for user. When user approves, run `node {SKILL_DIR}/../scripts/merge-sprint.mjs --sprint <N>`.
+2. **Offer a sprint review BEFORE asking about merge to main.** Use the `question` tool with this exact pattern:
+   ```
+   Sprint <N> is complete (<count> tasks merged). Before approving the merge to main,
+   would you like me to review sprint-<N> for any deferred items, missed bugs, or
+   follow-up tasks that should be added to TASKLIST.md?
+
+   Options:
+   - "Yes — review now" → run Step 0b workflow against sprint-<N>, then return here for the merge decision.
+   - "No — skip review" → proceed to merge approval. Reminder: you can run /orchestrate review-sprint-<N> later.
+   - "Skip review and merge to main now" → proceed straight to merge.
+   ```
+3. If the user picks "Yes", execute Step 0b for `sprint-<N>` end-to-end, then return to this step and re-ask about the merge.
+4. If the user picks "No" or "Skip review and merge", **explicitly remind them** in your response: "You can review this sprint later with `/orchestrate review-sprint-<N>` to surface any work that didn't get a task entry."
+5. **STOP.** Do not auto-merge sprint into main. Wait for user. When user approves, run `node {SKILL_DIR}/../scripts/merge-sprint.mjs --sprint <N>`.
 
 ## Step 5 — Idle
 
@@ -182,6 +233,7 @@ All scripts live in the skill's adjacent `scripts/` directory. Resolve `{SKILL_D
 | `run-gates.mjs` | Run test/lint/build, aggregate review verdicts |
 | `merge-task.mjs` | Merge task→sprint, update living docs |
 | `merge-sprint.mjs` | Merge sprint→main (only after user approval) |
+| `review-sprint.mjs` | Gather sprint artifacts (deferred items, findings, gate failures) for Step 0b post-sprint audit |
 | `notify.mjs` | Desktop notification via BurntToast |
 | `state.mjs` | Read/write `.orchestrator/state.json` |
 

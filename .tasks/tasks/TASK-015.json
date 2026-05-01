@@ -1,0 +1,23 @@
+{
+  "title": "Integration test for `merge-task.mjs` with linkage",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "testing",
+    "sprint-shard-c"
+  ],
+  "description": "Create `tests/integration/merge-task.test.mjs`. Set up tmp git repo with both `.tasks/` and `.issues/` fixtures + matching `.orchestrator.json`. Create a task whose description contains `Resolves ISSUE-042`. Run full merge-task flow against a fake merged branch. Assert: task shard is done + completed + notes; ISSUE-042 shard is resolved + completed + notes; both INDEX files regenerated; single commit captures both changes.",
+  "acceptance_criteria": [
+    "All assertions pass",
+    "Test handles both keyword + explicit-field linkage",
+    "Test verifies the single-commit semantic (TASK-014)",
+    "Test verifies non-linked task path (no .issues/ touched if no link)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:44.654Z",
+  "updated": "2026-05-01T19:10:55.315Z",
+  "id": "TASK-015",
+  "depends_on": [
+    "TASK-014"
+  ]
+}

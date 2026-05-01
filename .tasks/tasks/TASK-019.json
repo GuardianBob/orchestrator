@@ -1,0 +1,22 @@
+{
+  "title": "Audit `commands/*.md` for behavior changes",
+  "priority": "medium",
+  "effort": "S",
+  "tags": [
+    "docs",
+    "sprint-shard-d"
+  ],
+  "description": "Audit every file under `commands/`. For any slash command whose behavior changed (likely `/orchestrate`, anything that triggers `merge-task`): update help text to describe the new pre-build prompt (resume/restart/abandon), the post-merge linkage closure, and the multi-library support. Leave unchanged commands alone.",
+  "acceptance_criteria": [
+    "Every changed command's help text reflects new behavior",
+    "Diff of `commands/` is reviewed and committed",
+    "No command file references removed/renamed scripts"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:50.606Z",
+  "updated": "2026-05-01T19:10:55.325Z",
+  "id": "TASK-019",
+  "depends_on": [
+    "TASK-017"
+  ]
+}

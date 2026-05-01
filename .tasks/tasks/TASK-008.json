@@ -1,0 +1,22 @@
+{
+  "title": "Migrate `resolve-tasks.mjs` to use `loadLibraries()`",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "integration",
+    "sprint-shard-a"
+  ],
+  "description": "Modify `scripts/resolve-tasks.mjs`. Replace hardcoded `parseTasklistIndex` invocation with: find `library = config.shardLibraries.find(l => l.primary)`, read `library.indexPath`, iterate `open_tasks`, open shards from `library.shardDir/{id}.json`. Behavior is identical for default `.tasks/` config. Add regression test that resolves the same sprint as before and gets identical output.",
+  "acceptance_criteria": [
+    "`resolve-tasks.mjs sprint-4` against the issues-plugin produces byte-identical output to current behavior",
+    "Throws clear error if no library has `primary: true`",
+    "Throws clear error if multiple libraries have `primary: true`"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:33.562Z",
+  "updated": "2026-05-01T19:10:55.294Z",
+  "id": "TASK-008",
+  "depends_on": [
+    "TASK-007"
+  ]
+}

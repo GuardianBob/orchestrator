@@ -1,0 +1,23 @@
+{
+  "title": "Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "lib-core",
+    "sprint-shard-a"
+  ],
+  "description": "Create `scripts/shard-library.mjs`. Implement three of six public APIs per PLAN.md §3a: `loadLibraries(configPath)` (parses `shardLibraries[]`, synthesizes from legacy `tasksSource.primary` if absent, validates shape), `locateShard(library, id)` (returns absolute path or null), `updateShard(library, id, mutator)` (atomic `.tmp + rename` write, throws on missing file or mutator returning invalid shape). All exports use JSDoc with `@param`/`@returns`. No side effects on import.",
+  "acceptance_criteria": [
+    "All three functions exported and callable",
+    "`loadLibraries` synthesizes legacy config + emits debug warning naming the assumed defaults",
+    "`updateShard` is atomic — write failure leaves original file intact",
+    "Module has no top-level side effects (importable in tests safely)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:25.010Z",
+  "updated": "2026-05-01T19:10:55.280Z",
+  "id": "TASK-003",
+  "depends_on": [
+    "TASK-001"
+  ]
+}

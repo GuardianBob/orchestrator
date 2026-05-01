@@ -1,0 +1,22 @@
+{
+  "title": "Regression test: re-run sprint completes 0 tasks",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "testing",
+    "sprint-shard-c"
+  ],
+  "description": "Add a test that reproduces the exact silent-infinite-loop scenario from FEAT_FIXES.md §\"The actual problem\". Set up fixture, run full pre-build → merge-task cycle on TASK-001, then re-run `resolve-tasks.mjs sprint-4` and assert the queue is empty. This is the canonical fix-validation test.",
+  "acceptance_criteria": [
+    "Re-resolve returns `{ queue: [] }` after one full cycle",
+    "Asserts shard `status: done` directly, not just resolver output",
+    "Test is named `silent-infinite-loop-regression.test.mjs` for grep-ability"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T19:10:46.133Z",
+  "updated": "2026-05-01T19:10:55.318Z",
+  "id": "TASK-016",
+  "depends_on": [
+    "TASK-015"
+  ]
+}
