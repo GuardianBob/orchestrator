@@ -1,16 +1,16 @@
 {
   "target": "task-001",
   "resolution": "task-id",
-  "totalAvailable": 44,
+  "totalAvailable": 7,
   "queue": [
     {
       "id": "001",
-      "slug": "bootstrap-test-infrastructure-vitest",
-      "title": "Bootstrap test infrastructure (vitest)",
-      "source": "TASKS_PROPOSED.md",
+      "slug": "markdown-sprint-1-task-one",
+      "title": "Markdown sprint-1 task one",
+      "source": "TASKS.md",
       "sprintId": "1",
       "sprintRangeEnd": null,
-      "body": "**Priority:** high · **Effort:** S · **Tags:** foundation, sprint-shard-a, testing\n**Depends on:** none\n\n**Description:**\nAdd `vitest` as a devDependency. Create `vitest.config.mjs` with `testMatch: [\"tests/**/*.test.mjs\"]`, coverage thresholds `scripts/ >= 80%`, `lib/ >= 90%` (when `lib/` exists). Add npm scripts: `test`, `test:watch`, `test:coverage`. Update `package.json` `engines.node >= 20`. Verify `npx vitest run` exits 0 on empty test set.\n\n**Acceptance Criteria:**\n- `npx vitest run` exits 0 (no tests yet, no failure)\n- `npm test` is wired to `vitest run`\n- `package.json` engines.node is `>=20`\n- `vitest.config.mjs` is valid ESM (no CJS require)"
+      "body": "Body for the first markdown task. Demonstrates legacy 3-digit id format\nthat the `task-001` resolver target must match."
     }
   ]
 }

@@ -18,14 +18,17 @@ import path from 'node:path';
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const RESOLVER = path.join(REPO_ROOT, 'scripts', 'resolve-tasks.mjs');
 const SNAPSHOTS_DIR = path.join(REPO_ROOT, 'tests', 'snapshots');
+const SNAPSHOT_FIXTURE = path.join(REPO_ROOT, 'tests', 'fixtures', 'snapshot-repo');
 const TMP_BASE = path.join(REPO_ROOT, 'tests', 'fixtures', 'tmp');
 
 // Ensure the gitignored tmp parent exists.
 fs.mkdirSync(TMP_BASE, { recursive: true });
 
 /** Run the resolver. Returns { stdout, stderr, status }.
- *  Uses spawnSync so we always get stderr regardless of exit code. */
-function runResolver(target, cwd = REPO_ROOT) {
+ *  Uses spawnSync so we always get stderr regardless of exit code.
+ *  Default cwd is the snapshot fixture so callers without explicit cwd are
+ *  deterministic; group B/C/D tests pass an explicit tmpDir. */
+function runResolver(target, cwd = SNAPSHOT_FIXTURE) {
   const args = [RESOLVER, ...String(target).split(/\s+/).filter(Boolean)];
   const r = spawnSync(process.execPath, args, { cwd, encoding: 'utf8' });
   return {
@@ -58,7 +61,9 @@ function writeText(file, text) {
 }
 
 // ---------------------------------------------------------------------------
-// A. Snapshot regression — locks post-migration output as the contract.
+// A. Snapshot regression — runs against tests/fixtures/snapshot-repo/ (frozen
+//    7-task fixture: 4 sharded + 3 markdown). Per blueprint §7 — never against
+//    the live repo, which would churn on every .tasks/INDEX.json edit.
 // ---------------------------------------------------------------------------
 describe('resolve-tasks snapshot regression', () => {
   const targets = ['next', 'sprint-1', 'sprint-4', 'task-001', 'count:3', 'count:50'];
@@ -67,7 +72,7 @@ describe('resolve-tasks snapshot regression', () => {
       const safe = t.replace(/:/g, '_');
       const snapPath = path.join(SNAPSHOTS_DIR, `resolve-${safe}.json`);
       const expected = fs.readFileSync(snapPath, 'utf8');
-      const { stdout, status } = runResolver(t);
+      const { stdout, status } = runResolver(t, SNAPSHOT_FIXTURE);
       expect(status).toBe(0);
       // Snapshots include a trailing newline (file convention); resolver output
       // does not. Normalise by trimming both to a JSON-only comparison string.
@@ -132,20 +137,20 @@ describe('resolve-tasks sharded library loading', () => {
   test('2. done statuses (done/completed/archived/cancelled/closed) are filtered', () => {
     const { indexPath, shardDir } = setupSingleLib();
     const doneStatuses = ['done', 'completed', 'archived', 'cancelled', 'closed'];
-    const open = [{ id: 'TASK-OPEN', title: 'survivor', status: 'backlog' }];
+    const open = [{ id: 'TASK-900', title: 'survivor', status: 'backlog' }];
     const closed = doneStatuses.map((s, i) => ({
-      id: `TASK-D${i}`, title: `dead-${s}`, status: s,
+      id: `TASK-80${i}`, title: `dead-${s}`, status: s,
     }));
     writeJson(indexPath, { open_tasks: [...closed, ...open] });
-    writeJson(path.join(shardDir, 'TASK-OPEN.json'), {
-      id: 'TASK-OPEN', title: 'survivor', description: 'lives on',
+    writeJson(path.join(shardDir, 'TASK-900.json'), {
+      id: 'TASK-900', title: 'survivor', description: 'lives on',
       acceptance_criteria: [], tags: [],
     });
 
     const { stdout, status } = runResolver('count:50', tmpDir);
     expect(status).toBe(0);
     const parsed = JSON.parse(stdout);
-    expect(parsed.queue.map(q => q.id)).toEqual(['TASK-OPEN']);
+    expect(parsed.queue.map(q => q.id)).toEqual(['TASK-900']);
   });
 
   test('3. missing shard file → warn to stderr, task emits with title-only body', () => {
@@ -186,11 +191,11 @@ describe('resolve-tasks sharded library loading', () => {
     const { indexPath, shardDir } = setupSingleLib();
     writeJson(indexPath, {
       open_tasks: [
-        { id: 'TASK-S3', title: 'tagged', status: 'backlog', tags: ['sprint-3'] },
-        { id: 'TASK-NO', title: 'untagged', status: 'backlog' },
+        { id: 'TASK-503', title: 'tagged', status: 'backlog', tags: ['sprint-3'] },
+        { id: 'TASK-504', title: 'untagged', status: 'backlog' },
       ],
     });
-    for (const id of ['TASK-S3', 'TASK-NO']) {
+    for (const id of ['TASK-503', 'TASK-504']) {
       writeJson(path.join(shardDir, `${id}.json`), {
         id, title: id, description: 'd', acceptance_criteria: [], tags: [],
       });
@@ -200,8 +205,33 @@ describe('resolve-tasks sharded library loading', () => {
     expect(status).toBe(0);
     const parsed = JSON.parse(stdout);
     const byId = Object.fromEntries(parsed.queue.map(q => [q.id, q]));
-    expect(byId['TASK-S3'].sprintId).toBe('3');
-    expect(byId['TASK-NO'].sprintId).toBe('1');
+    expect(byId['TASK-503'].sprintId).toBe('3');
+    expect(byId['TASK-504'].sprintId).toBe('1');
+  });
+
+  test('6. path-traversal id (e.g. "../../etc/passwd") → warn + skip, no FS escape', () => {
+    // INDEX.json with a malicious id. validateShardId (called by locateShard)
+    // must reject it before any path.join touches the filesystem.
+    const { indexPath, shardDir } = setupSingleLib();
+    writeJson(indexPath, {
+      open_tasks: [
+        { id: '../../../etc/passwd', title: 'evil', status: 'backlog' },
+        { id: 'TASK-700', title: 'good', status: 'backlog' },
+      ],
+    });
+    writeJson(path.join(shardDir, 'TASK-700.json'), {
+      id: 'TASK-700', title: 'good', description: 'd', acceptance_criteria: [], tags: [],
+    });
+
+    const { stdout, stderr, status } = runResolver('count:10', tmpDir);
+    expect(status).toBe(0);
+    // Resolver must exit cleanly and warn about the unsafe id.
+    expect(stderr).toMatch(/unsafe id|not safe/i);
+    const parsed = JSON.parse(stdout);
+    const ids = parsed.queue.map(q => q.id);
+    // Malicious id MUST NOT appear in the queue; safe sibling MUST.
+    expect(ids).not.toContain('../../../etc/passwd');
+    expect(ids).toContain('TASK-700');
   });
 });
 
@@ -243,16 +273,16 @@ describe('resolve-tasks multi-library', () => {
     // `open_tasks`. Since the blueprint's multi-lib test wants tasks from both,
     // we write a tasks-shaped INDEX in each.).
     writeJson(path.join(tmpDir, tasksIndex), {
-      open_tasks: [{ id: 'TASK-A1', title: 'from tasks', status: 'backlog' }],
+      open_tasks: [{ id: 'TASK-201', title: 'from tasks', status: 'backlog' }],
     });
-    writeJson(path.join(tmpDir, tasksShards, 'TASK-A1.json'), {
-      id: 'TASK-A1', title: 'from tasks', description: 'd', acceptance_criteria: [], tags: [],
+    writeJson(path.join(tmpDir, tasksShards, 'TASK-201.json'), {
+      id: 'TASK-201', title: 'from tasks', description: 'd', acceptance_criteria: [], tags: [],
     });
     writeJson(path.join(tmpDir, issuesIndex), {
-      open_tasks: [{ id: 'ISSUE-B1', title: 'from issues', status: 'open' }],
+      open_tasks: [{ id: 'ISSUE-301', title: 'from issues', status: 'open' }],
     });
-    writeJson(path.join(tmpDir, issuesShards, 'ISSUE-B1.json'), {
-      id: 'ISSUE-B1', title: 'from issues', description: 'd', acceptance_criteria: [], tags: [],
+    writeJson(path.join(tmpDir, issuesShards, 'ISSUE-301.json'), {
+      id: 'ISSUE-301', title: 'from issues', description: 'd', acceptance_criteria: [], tags: [],
     });
   }
 
@@ -261,7 +291,7 @@ describe('resolve-tasks multi-library', () => {
     const { stdout, status } = runResolver('count:10', tmpDir);
     expect(status).toBe(0);
     const parsed = JSON.parse(stdout);
-    expect(parsed.queue.map(q => q.id)).toEqual(['TASK-A1', 'ISSUE-B1']);
+    expect(parsed.queue.map(q => q.id)).toEqual(['TASK-201', 'ISSUE-301']);
     expect(parsed.queue.map(q => q.source)).toEqual(['tasks', 'issues']);
   });
 
@@ -298,8 +328,8 @@ describe('resolve-tasks multi-library', () => {
     const parsed = JSON.parse(stdout);
     const ids = parsed.queue.map(q => q.id);
     // Expect both shard libs + markdown task; no duplicate ids.
-    expect(ids).toContain('TASK-A1');
-    expect(ids).toContain('ISSUE-B1');
+    expect(ids).toContain('TASK-201');
+    expect(ids).toContain('ISSUE-301');
     expect(ids.some(id => /md1/i.test(id))).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);
   });

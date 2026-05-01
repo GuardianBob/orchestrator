@@ -1,61 +1,16 @@
 {
   "target": "sprint-4",
   "resolution": "sprint",
-  "totalAvailable": 44,
+  "totalAvailable": 7,
   "queue": [
     {
-      "id": "017",
-      "slug": "rewrite-skill-skill-md-configuration-sec",
-      "title": "Rewrite `skill/SKILL.md` Configuration section",
-      "source": "TASKS_PROPOSED.md",
+      "id": "TASK-400",
+      "slug": "sharded-sprint-4-task",
+      "title": "Sharded sprint-4 task",
+      "source": "tasks",
       "sprintId": "4",
       "sprintRangeEnd": null,
-      "body": "**Priority:** medium · **Effort:** M · **Tags:** docs, sprint-shard-d\n**Depends on:** TASK-016\n\n**Description:**\nUpdate `skill/SKILL.md` §\"Configuration reference\" with the new `shardLibraries[]` config shape. Add new top-level §\"Shard Library Integration\" covering: status inference rules + heuristics + override path; cross-library link detection (explicit field + keyword regex); resilience model when rebuild CLI is absent; troubleshooting table for common errors (ambiguous status enum, unknown link target, missing schema). Include a complete `.orchestrator.json` example with both `tasks` and `issues` libraries.\n\n**Acceptance Criteria:**\n- New §\"Shard Library Integration\" present\n- Config example is valid JSON + matches the schema in TASK-007\n- Troubleshooting table covers: ambiguous-enum, missing-schema, unknown-link, missing-rebuild-CLI\n- Backward-compat note explains legacy `tasksSource.primary` still works"
-    },
-    {
-      "id": "018",
-      "slug": "update-readme-md",
-      "title": "Update `README.md`",
-      "source": "TASKS_PROPOSED.md",
-      "sprintId": "4",
-      "sprintRangeEnd": null,
-      "body": "**Priority:** medium · **Effort:** S · **Tags:** docs, sprint-shard-d\n**Depends on:** TASK-017\n\n**Description:**\nUpdate `README.md` feature list to mention multi-library support + automatic shard write-back. Update Quickstart to show the new minimum config (single primary library). Add a \"Multi-library example\" snippet referencing `gen-tasklist` + `gen-issues` together.\n\n**Acceptance Criteria:**\n- Feature list mentions: multi-library, status write-back, cross-library linkage\n- Quickstart config example is valid + minimal\n- Multi-library example snippet matches TASK-017's example for consistency"
-    },
-    {
-      "id": "019",
-      "slug": "audit-commands-md-for-behavior-changes",
-      "title": "Audit `commands/*.md` for behavior changes",
-      "source": "TASKS_PROPOSED.md",
-      "sprintId": "4",
-      "sprintRangeEnd": null,
-      "body": "**Priority:** medium · **Effort:** S · **Tags:** docs, sprint-shard-d\n**Depends on:** TASK-017\n\n**Description:**\nAudit every file under `commands/`. For any slash command whose behavior changed (likely `/orchestrate`, anything that triggers `merge-task`): update help text to describe the new pre-build prompt (resume/restart/abandon), the post-merge linkage closure, and the multi-library support. Leave unchanged commands alone.\n\n**Acceptance Criteria:**\n- Every changed command's help text reflects new behavior\n- Diff of `commands/` is reviewed and committed\n- No command file references removed/renamed scripts"
-    },
-    {
-      "id": "020",
-      "slug": "live-acceptance-test-against-issues-plug",
-      "title": "Live acceptance test against `issues-plugin` sprint-4",
-      "source": "TASKS_PROPOSED.md",
-      "sprintId": "4",
-      "sprintRangeEnd": null,
-      "body": "**Priority:** high · **Effort:** S · **Tags:** acceptance, sprint-shard-d\n**Depends on:** TASK-016, TASK-017, TASK-018, TASK-019\n\n**Description:**\nRun the 5-step FEAT_FIXES.md acceptance test against `C:/Coding/ai_dev/issues-plugin`: clean slate (`git checkout main && git branch -D sprint-4`); `/orchestrate sprint-4`; verify TASK-001 + TASK-002 shards show `done` + timestamps + notes; verify INDEX no longer lists them; re-run `/orchestrate sprint-4` → assert 0 tasks resolved. Capture full output to `acceptance-results-<date>.md`.\n\n**Acceptance Criteria:**\n- All 5 FEAT_FIXES.md test steps pass\n- If TASK-001 or TASK-002 references an ISSUE, the issue is also marked closed\n- Output captured to a dated file in repo root (gitignored)\n- Any deviation triggers a new bug task before closing this one"
-    },
-    {
-      "id": "021",
-      "slug": "tag-release-v1-x-0",
-      "title": "Tag release v1.x.0",
-      "source": "TASKS_PROPOSED.md",
-      "sprintId": "4",
-      "sprintRangeEnd": null,
-      "body": "**Priority:** medium · **Effort:** XS · **Tags:** release, sprint-shard-d\n**Depends on:** TASK-020\n\n**Description:**\nAfter live acceptance passes: bump `package.json` version (minor bump — additive backward-compat feature). Commit. Tag `v1.x.0`. Push tag. Update `CHANGELOG.md` (or create one) with summary of the change + decision-log link.\n\n**Acceptance Criteria:**\n- `package.json` version bumped per semver (minor)\n- Tag pushed to remote\n- CHANGELOG entry summarizes user-facing changes only (no implementation detail)"
-    },
-    {
-      "id": "022",
-      "slug": "post-launch-monitoring-task-placeholder",
-      "title": "Post-launch monitoring task (placeholder)",
-      "source": "TASKS_PROPOSED.md",
-      "sprintId": "4",
-      "sprintRangeEnd": null,
-      "body": "**Priority:** low · **Effort:** XS · **Tags:** post-launch, sprint-shard-d\n**Depends on:** TASK-021\n\n**Description:**\nPlaceholder backlog task: monitor first 3 real `/orchestrate` runs against `issues-plugin` after release. Capture any unexpected behavior (status inference misses, link scanner false positives, rebuild failures in unusual env) and create follow-up bug tasks. Close this task after 3 successful runs OR after 7 days, whichever comes first.\n\n**Acceptance Criteria:**\n- 3 real-world orchestrator runs documented OR 7-day window elapsed\n- Any anomaly captured as a separate bug task\n- Closure note summarizes \"shipped clean\" or lists follow-ups"
+      "body": "# TASK-400: Sharded sprint-4 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-4, fixture\n\n## Description\n\nSprint-4 sharded fixture. Sole task in the sprint-4 query result.\n\n## Acceptance Criteria\n\n- Resolver returns exactly one task for sprint-4"
     }
   ]
 }

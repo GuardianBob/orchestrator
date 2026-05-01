@@ -1,34 +1,34 @@
 {
   "target": "count:3",
   "resolution": "count",
-  "totalAvailable": 44,
+  "totalAvailable": 7,
   "queue": [
     {
-      "id": "TASK-001",
-      "slug": "bootstrap-test-infrastructure-vitest",
-      "title": "Bootstrap test infrastructure (vitest)",
+      "id": "TASK-100",
+      "slug": "first-sharded-sprint-1-task",
+      "title": "First sharded sprint-1 task",
       "source": "tasks",
       "sprintId": "1",
       "sprintRangeEnd": null,
-      "body": "# TASK-001: Bootstrap test infrastructure (vitest)\n\n**Priority:** high  **Effort:** S\n**Tags:** foundation, sprint-shard-a, testing\n\n## Description\n\nAdd `vitest` as a devDependency. Create `vitest.config.mjs` with `testMatch: [\"tests/**/*.test.mjs\"]`, coverage thresholds `scripts/ >= 80%`, `lib/ >= 90%` (when `lib/` exists). Add npm scripts: `test`, `test:watch`, `test:coverage`. Update `package.json` `engines.node >= 20`. Verify `npx vitest run` exits 0 on empty test set.\n\n## Acceptance Criteria\n\n- `npx vitest run` exits 0 (no tests yet, no failure)\n- `npm test` is wired to `vitest run`\n- `package.json` engines.node is `>=20`\n- `vitest.config.mjs` is valid ESM (no CJS require)"
+      "body": "# TASK-100: First sharded sprint-1 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-1, fixture\n\n## Description\n\nFixture task for snapshot tests. Exercises the sharded code path under sprint-1.\n\n## Acceptance Criteria\n\n- Resolver emits this task with source=tasks\n- Body contains description and acceptance criteria"
     },
     {
-      "id": "TASK-002",
-      "slug": "create-test-fixtures-for-tasks-and-issue",
-      "title": "Create test fixtures for `.tasks/` and `.issues/`",
+      "id": "TASK-101",
+      "slug": "second-sharded-sprint-1-task",
+      "title": "Second sharded sprint-1 task",
       "source": "tasks",
       "sprintId": "1",
       "sprintRangeEnd": null,
-      "body": "# TASK-002: Create test fixtures for `.tasks/` and `.issues/`\n\n**Priority:** high  **Effort:** S\n**Tags:** foundation, sprint-shard-a, testing\n**Depends on:** TASK-001\n\n## Description\n\nCreate `tests/fixtures/tasks-fixture/.tasks/` with: `INDEX.json` (3 sample tasks: backlog, in-progress, done), `tasks/TASK-001.json` through `TASK-003.json`, `schemas/task.schema.json` copied verbatim from `gen-tasklist`, `config.json`. Mirror under `tests/fixtures/issues-fixture/.issues/` with issue vocabulary (`open` / `in-progress` / `resolved`) and a sample issue. Document fixture provenance in `tests/fixtures/README.md`.\n\n## Acceptance Criteria\n\n- Both fixture directories validate against their respective schemas via ajv\n- Fixture schemas are byte-identical to upstream gen-tasklist + gen-issues source (provenance noted)\n- README documents how to refresh fixtures from upstream"
+      "body": "# TASK-101: Second sharded sprint-1 task\n\n**Priority:** medium  **Effort:** M\n**Tags:** sprint-1, fixture\n\n## Description\n\nSecond fixture sprint-1 task. Used to verify ordering within a library.\n\n## Acceptance Criteria\n\n- Appears second in the sharded library output"
     },
     {
-      "id": "TASK-003",
-      "slug": "implement-shard-library-mjs-core-loadlib",
-      "title": "Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`",
+      "id": "TASK-300",
+      "slug": "sharded-sprint-3-task",
+      "title": "Sharded sprint-3 task",
       "source": "tasks",
-      "sprintId": "1",
+      "sprintId": "3",
       "sprintRangeEnd": null,
-      "body": "# TASK-003: Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`\n\n**Priority:** high  **Effort:** M\n**Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-001\n\n## Description\n\nCreate `scripts/shard-library.mjs`. Implement three of six public APIs per PLAN.md §3a: `loadLibraries(configPath)` (parses `shardLibraries[]`, synthesizes from legacy `tasksSource.primary` if absent, validates shape), `locateShard(library, id)` (returns absolute path or null), `updateShard(library, id, mutator)` (atomic `.tmp + rename` write, throws on missing file or mutator returning invalid shape). All exports use JSDoc with `@param`/`@returns`. No side effects on import.\n\n## Acceptance Criteria\n\n- All three functions exported and callable\n- `loadLibraries` synthesizes legacy config + emits debug warning naming the assumed defaults\n- `updateShard` is atomic — write failure leaves original file intact\n- Module has no top-level side effects (importable in tests safely)"
+      "body": "# TASK-300: Sharded sprint-3 task\n\n**Priority:** low  **Effort:** L\n**Tags:** sprint-3, fixture\n\n## Description\n\nSprint-3 sharded fixture. Should not appear in sprint-1 or sprint-4 queries.\n\n## Acceptance Criteria\n\n- Filtered out by sprint-1 / sprint-4 queries"
     }
   ]
 }

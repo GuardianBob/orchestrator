@@ -1,0 +1,14 @@
+{
+  "id": "TASK-400",
+  "title": "Sharded sprint-4 task",
+  "description": "Sprint-4 sharded fixture. Sole task in the sprint-4 query result.",
+  "status": "backlog",
+  "effort": "S",
+  "priority": "high",
+  "tags": ["sprint-4", "fixture"],
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z",
+  "acceptance_criteria": [
+    "Resolver returns exactly one task for sprint-4"
+  ]
+}
