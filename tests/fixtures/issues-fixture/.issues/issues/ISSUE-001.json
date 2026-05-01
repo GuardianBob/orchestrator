@@ -1,0 +1,16 @@
+{
+  "id": "ISSUE-001",
+  "title": "Seed issue — open",
+  "description": "Fixture issue shard demonstrating the `open` initial state.",
+  "status": "open",
+  "effort": "S",
+  "priority": "medium",
+  "tags": ["fixture", "seed"],
+  "created": "2026-01-01T00:00:00.000Z",
+  "updated": "2026-01-01T00:00:00.000Z",
+  "started": null,
+  "completed": null,
+  "hours_estimate": 1.5,
+  "hours_actual": null,
+  "acceptance_criteria": ["fixture validates against issue.schema.json"]
+}

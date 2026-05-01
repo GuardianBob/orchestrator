@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "generator": "issues-rebuild@0.1.0",
+  "updated": "2026-01-01T00:00:00.000Z",
+  "project_root": "tests/fixtures/issues-fixture",
+  "next_issue_id": "ISSUE-002",
+  "previous_issue": null,
+  "current_issue": null,
+  "next_issue": {
+    "id": "ISSUE-001",
+    "title": "Seed issue — open",
+    "status": "open",
+    "effort": "S",
+    "priority": "medium",
+    "depends_on": []
+  },
+  "open_issues": [
+    {
+      "id": "ISSUE-001",
+      "title": "Seed issue — open",
+      "status": "open",
+      "effort": "S"
+    }
+  ],
+  "blocked_issues": [],
+  "counts": {
+    "total": 1,
+    "open": 1,
+    "triage": 0,
+    "in_progress": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "wontfix": 0,
+    "duplicate": 0,
+    "active": 1,
+    "closed": 0,
+    "archived": 0
+  },
+  "effort_summary": {
+    "open_hours": 1.5,
+    "closed_estimate_hours": 0,
+    "closed_actual_hours": 0,
+    "estimate_accuracy": null
+  }
+}

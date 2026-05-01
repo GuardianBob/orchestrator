@@ -1,0 +1,22 @@
+{
+  "title": "Extract shared loadOrchestratorConfig helper",
+  "priority": "low",
+  "effort": "S",
+  "tags": [
+    "refactor",
+    "tech-debt",
+    "sprint-1-followup"
+  ],
+  "description": "scripts/load-config.mjs and scripts/resolve-tasks.mjs both invoke loadLibraries() to get the synthesized config. Extract a single loadOrchestratorConfig({withSideEffects: bool}) helper so both consumers go through one entry point. Reduces drift risk.",
+  "acceptance_criteria": [
+    "Both load-config.mjs and resolve-tasks.mjs route through the new helper",
+    "All 80 existing tests pass without modification",
+    "load-config.mjs CLI output unchanged",
+    "resolve-tasks.mjs CLI output unchanged for all 6 snapshot baselines"
+  ],
+  "status": "backlog",
+  "depends_on": [],
+  "created": "2026-05-01T22:06:44.882Z",
+  "updated": "2026-05-01T22:06:44.882Z",
+  "id": "TASK-024"
+}

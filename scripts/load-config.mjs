@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { loadLibraries } from './shard-library.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cwd = process.cwd();
@@ -63,6 +64,13 @@ if (fs.existsSync(cfgPath)) {
   cfg = tpl;
   created = true;
 }
+
+// Resolve shard libraries (PLAN.md §3a). Always an array, length >= 1.
+// For legacy configs lacking a `libraries` block, loadLibraries synthesizes
+// a single default library from `tasksSource.primary`. Errors (e.g., neither
+// libraries nor tasksSource.primary present) propagate to the caller.
+// Legacy `cfg.tasksSource` is preserved unchanged for existing consumers.
+cfg.shardLibraries = loadLibraries(cfgPath);
 
 const stateDir = path.join(cwd, '.orchestrator');
 if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir);

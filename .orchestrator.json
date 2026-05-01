@@ -39,7 +39,7 @@
   ],
   "maxRetries": 2,
   "commands": {
-    "test": null,
+    "test": "npx vitest run",
     "lint": null,
     "build": null
   },

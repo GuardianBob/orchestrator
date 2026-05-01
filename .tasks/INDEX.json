@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-01T19:16:09.101Z",
-  "next_task_id": "TASK-023",
+  "updated": "2026-05-01T22:06:48.584Z",
+  "next_task_id": "TASK-026",
   "previous_task": null,
   "current_task": null,
   "next_task": {
@@ -257,24 +257,60 @@
         "post-launch",
         "sprint-shard-d"
       ]
+    },
+    {
+      "id": "TASK-023",
+      "title": "Document PLAN §3 Case-B .md synthesizer deviation",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "tech-debt",
+        "sprint-1-followup"
+      ]
+    },
+    {
+      "id": "TASK-024",
+      "title": "Extract shared loadOrchestratorConfig helper",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "low",
+      "tags": [
+        "refactor",
+        "tech-debt",
+        "sprint-1-followup"
+      ]
+    },
+    {
+      "id": "TASK-025",
+      "title": "Document shard library config trust boundary",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "security",
+        "sprint-1-followup"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 22,
-    "backlog": 22,
+    "total": 25,
+    "backlog": 25,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 0,
     "cancelled": 0,
-    "open": 22,
+    "open": 25,
     "closed": 0,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 51,
+    "open_hours": 53.5,
     "closed_estimate_hours": 0,
     "closed_actual_hours": 0,
     "estimate_accuracy": null

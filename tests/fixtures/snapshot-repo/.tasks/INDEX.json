@@ -1,0 +1,28 @@
+{
+  "open_tasks": [
+    {
+      "id": "TASK-100",
+      "title": "First sharded sprint-1 task",
+      "status": "backlog",
+      "tags": ["sprint-1", "fixture"]
+    },
+    {
+      "id": "TASK-101",
+      "title": "Second sharded sprint-1 task",
+      "status": "ready",
+      "tags": ["sprint-1", "fixture"]
+    },
+    {
+      "id": "TASK-300",
+      "title": "Sharded sprint-3 task",
+      "status": "backlog",
+      "tags": ["sprint-3", "fixture"]
+    },
+    {
+      "id": "TASK-400",
+      "title": "Sharded sprint-4 task",
+      "status": "backlog",
+      "tags": ["sprint-4", "fixture"]
+    }
+  ]
+}

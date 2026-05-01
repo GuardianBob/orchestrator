@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gen-tasklist.dev/index.schema.json",
+  "title": "Tasklist Index",
+  "description": "Derived index of all task shards. Regenerated atomically by tasklist-rebuild.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generator",
+    "updated",
+    "next_task_id",
+    "previous_task",
+    "current_task",
+    "next_task",
+    "open_tasks",
+    "blocked_tasks",
+    "counts",
+    "effort_summary"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generator": { "type": "string" },
+    "updated": { "type": "string", "format": "date-time" },
+    "project_root": { "type": "string" },
+    "next_task_id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+
+    "previous_task": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+            "title": { "type": "string" },
+            "status": { "type": "string", "enum": ["done", "cancelled"] },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "completed": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "current_task": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+            "title": { "type": "string" },
+            "status": { "type": "string", "const": "in-progress" },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "started": { "type": ["string", "null"], "format": "date-time" },
+            "assignee": { "type": ["string", "null"] },
+            "depends_on": { "type": "array", "items": { "type": "string" } },
+            "acceptance_criteria_count": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "next_task": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+            "title": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["ready", "backlog"]
+        },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+            "depends_on": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+
+    "open_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "status", "effort"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+          "title": { "type": "string" },
+          "status": { "type": "string", "enum": ["backlog", "ready", "in-progress", "blocked", "review"] },
+          "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
+    "blocked_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "blocked_by", "title"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+          "blocked_by": { "type": "array", "items": { "type": "string", "pattern": "^TASK-\\d{3,}$" } },
+          "title": { "type": "string" }
+        }
+      }
+    },
+
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "backlog", "ready", "in_progress", "blocked", "review", "done", "cancelled", "open", "closed", "archived"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "backlog": { "type": "integer", "minimum": 0 },
+        "ready": { "type": "integer", "minimum": 0 },
+        "in_progress": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "review": { "type": "integer", "minimum": 0 },
+        "done": { "type": "integer", "minimum": 0 },
+        "cancelled": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "closed": { "type": "integer", "minimum": 0 },
+        "archived": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "effort_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["open_hours", "closed_estimate_hours", "closed_actual_hours"],
+      "properties": {
+        "open_hours": { "type": "number", "minimum": 0 },
+        "closed_estimate_hours": { "type": "number", "minimum": 0 },
+        "closed_actual_hours": { "type": "number", "minimum": 0 },
+        "estimate_accuracy": { "type": ["number", "null"], "minimum": 0 }
+      }
+    }
+  }
+}

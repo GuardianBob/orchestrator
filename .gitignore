@@ -1,3 +1,15 @@
 orchestrator-review.md
 # orchestrator state (reviews, gates, notifications, resume snapshot)
 .orchestrator/
+
+# node / vitest
+node_modules/
+coverage/
+.vitest-cache/
+*.log
+
+# Windows reserved name — created accidentally by tools emitting `> NUL`
+NUL
+
+# Test scratch dir — temp libraries / shards created by unit tests
+tests/fixtures/tmp/

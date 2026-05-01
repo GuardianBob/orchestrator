@@ -1,0 +1,16 @@
+{
+  "target": "sprint-4",
+  "resolution": "sprint",
+  "totalAvailable": 7,
+  "queue": [
+    {
+      "id": "TASK-400",
+      "slug": "sharded-sprint-4-task",
+      "title": "Sharded sprint-4 task",
+      "source": "tasks",
+      "sprintId": "4",
+      "sprintRangeEnd": null,
+      "body": "# TASK-400: Sharded sprint-4 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-4, fixture\n\n## Description\n\nSprint-4 sharded fixture. Sole task in the sprint-4 query result.\n\n## Acceptance Criteria\n\n- Resolver returns exactly one task for sprint-4"
+    }
+  ]
+}

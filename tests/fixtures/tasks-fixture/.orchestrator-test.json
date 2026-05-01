@@ -1,0 +1,13 @@
+{
+  "shardLibraries": [
+    {
+      "id": "tasks",
+      "name": "Tasks",
+      "indexPath": ".tasks/INDEX.json",
+      "shardDir": ".tasks/tasks",
+      "primary": true,
+      "linkField": "resolves",
+      "rebuildCmd": "npx tasklist-rebuild"
+    }
+  ]
+}

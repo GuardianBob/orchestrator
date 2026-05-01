@@ -1,0 +1,18 @@
+{
+  "id": "TASK-002",
+  "title": "Seed task — in progress",
+  "description": "Fixture shard demonstrating the `in-progress` state with an assignee.",
+  "status": "in-progress",
+  "effort": "M",
+  "priority": "high",
+  "tags": ["fixture", "seed"],
+  "created": "2026-01-03T00:00:00.000Z",
+  "updated": "2026-01-04T08:30:00.000Z",
+  "started": "2026-01-04T08:30:00.000Z",
+  "completed": null,
+  "hours_estimate": 4,
+  "hours_actual": null,
+  "assignee": "fixture-bot",
+  "depends_on": ["TASK-001"],
+  "acceptance_criteria": ["does the work", "writes a test"]
+}

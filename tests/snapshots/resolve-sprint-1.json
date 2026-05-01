@@ -1,0 +1,43 @@
+{
+  "target": "sprint-1",
+  "resolution": "sprint",
+  "totalAvailable": 7,
+  "queue": [
+    {
+      "id": "TASK-100",
+      "slug": "first-sharded-sprint-1-task",
+      "title": "First sharded sprint-1 task",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-100: First sharded sprint-1 task\n\n**Priority:** high  **Effort:** S\n**Tags:** sprint-1, fixture\n\n## Description\n\nFixture task for snapshot tests. Exercises the sharded code path under sprint-1.\n\n## Acceptance Criteria\n\n- Resolver emits this task with source=tasks\n- Body contains description and acceptance criteria"
+    },
+    {
+      "id": "TASK-101",
+      "slug": "second-sharded-sprint-1-task",
+      "title": "Second sharded sprint-1 task",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-101: Second sharded sprint-1 task\n\n**Priority:** medium  **Effort:** M\n**Tags:** sprint-1, fixture\n\n## Description\n\nSecond fixture sprint-1 task. Used to verify ordering within a library.\n\n## Acceptance Criteria\n\n- Appears second in the sharded library output"
+    },
+    {
+      "id": "001",
+      "slug": "markdown-sprint-1-task-one",
+      "title": "Markdown sprint-1 task one",
+      "source": "TASKS.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "Body for the first markdown task. Demonstrates legacy 3-digit id format\nthat the `task-001` resolver target must match."
+    },
+    {
+      "id": "002",
+      "slug": "markdown-sprint-1-task-two",
+      "title": "Markdown sprint-1 task two",
+      "source": "TASKS.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "Second markdown sprint-1 task. Proves markdown + sharded merge under\nthe same sprint."
+    }
+  ]
+}

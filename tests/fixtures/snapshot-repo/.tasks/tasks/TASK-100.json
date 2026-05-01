@@ -1,0 +1,15 @@
+{
+  "id": "TASK-100",
+  "title": "First sharded sprint-1 task",
+  "description": "Fixture task for snapshot tests. Exercises the sharded code path under sprint-1.",
+  "status": "backlog",
+  "effort": "S",
+  "priority": "high",
+  "tags": ["sprint-1", "fixture"],
+  "created": "2026-01-01T00:00:00Z",
+  "updated": "2026-01-01T00:00:00Z",
+  "acceptance_criteria": [
+    "Resolver emits this task with source=tasks",
+    "Body contains description and acceptance criteria"
+  ]
+}

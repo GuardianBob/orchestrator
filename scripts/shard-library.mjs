@@ -1,0 +1,770 @@
+#!/usr/bin/env node
+// shard-library.mjs — Generic helper for sharded-library I/O (tasks, issues, etc.)
+//
+// PURITY CONTRACT (LD-PAT-001 / LD-BUG-010):
+//   - No top-level side effects. Importable in tests with zero I/O.
+//   - No process.exit anywhere. Throws typed errors; callers map to exit codes.
+//   - No console.log. Debug output gated on DEBUG_SHARD_LIBRARY env var.
+//
+// WRITE CONTRACT (LD-ARC-002):
+//   - This module writes individual shard files only. It NEVER writes INDEX.json.
+//   - INDEX.json is a derived view; rebuild it via library.rebuildCmd (TASK-004).
+//   - rebuildLibrary() shells out to that CLI; it does not author INDEX.json itself.
+//
+// PATH CONTRACT (LD-XPL-001):
+//   - Every path constructed via path.join / path.resolve. No string concat.
+//   - Shard IDs are validated against /^[A-Z][A-Z0-9_]*-\d+$/ before being used
+//     as filename stems, preventing path traversal (e.g. "../../etc/passwd").
+//
+// I/O choice — synchronous fs (not fs/promises). Rationale:
+//   1. Matches existing scripts/load-config.mjs style — single I/O paradigm.
+//   2. renameSync is the POSIX/NTFS atomic primitive; async offers no atomicity benefit.
+//   3. Callers (branch-setup.mjs, merge-task.mjs) are short-lived CLI scripts.
+//   4. Simpler error semantics (no unhandled rejections).
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+
+// ---------------------------------------------------------------------------
+// Typed errors
+// ---------------------------------------------------------------------------
+
+export class ShardLibraryError extends Error {
+  constructor(msg) { super(msg); this.name = 'ShardLibraryError'; }
+}
+export class ShardNotFoundError extends ShardLibraryError {
+  constructor(msg) { super(msg); this.name = 'ShardNotFoundError'; }
+}
+export class ShardValidationError extends ShardLibraryError {
+  constructor(msg) { super(msg); this.name = 'ShardValidationError'; }
+}
+
+// ---------------------------------------------------------------------------
+// Typedefs (see TASK-003 blueprint §2)
+// ---------------------------------------------------------------------------
+
+/**
+ * @typedef {Object} ShardLibrary
+ * @property {string} id           Stable identifier (e.g. "tasks", "issues").
+ * @property {string} name         Human label for log messages.
+ * @property {string} indexPath    Absolute path to INDEX.json (materialized view).
+ * @property {string} indexDir     Absolute path to the directory containing INDEX.json.
+ * @property {string} shardDir     Absolute path to the per-item shard directory.
+ * @property {string} schemaPath   Absolute path to the shard JSON schema (may not exist).
+ * @property {Object|null} statusMap   Optional `{ start, done }` override; null = infer.
+ * @property {string|null} linkField   Field name listing linked IDs (e.g. "resolves").
+ * @property {boolean} primary     True for the single primary library.
+ * @property {string} rebuildCmd   Shell command to rebuild INDEX.json (TASK-004).
+ */
+
+// ---------------------------------------------------------------------------
+// Private cache (blueprint §5)
+// ---------------------------------------------------------------------------
+
+const _cache = new Map(); // absoluteConfigPath -> ShardLibrary[]
+let _statusVocabCache = new WeakMap(); // ShardLibrary -> { start, done }
+let _prefixCache = new WeakMap(); // ShardLibrary -> string|null (sampled ID prefix)
+
+/**
+ * Test-only: clear the loadLibraries cache, the resolveStatusVocab cache,
+ * and the prefix cache (used by scanLinks). Do not call from production code.
+ * @returns {void}
+ */
+export function __resetCache() {
+  _cache.clear();
+  _statusVocabCache = new WeakMap();
+  _prefixCache = new WeakMap();
+}
+
+function debugWarn(...args) {
+  if (process.env.DEBUG_SHARD_LIBRARY) console.warn('[shard-library]', ...args);
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Load and validate the shardLibraries[] array from an .orchestrator.json file.
+ * If absent, synthesizes a single-entry array from legacy tasksSource.primary
+ * per the rules in TASK-003 blueprint §3.
+ *
+ * Resolves all relative paths against the directory containing configPath
+ * (LD-CLI-001 — never against process.cwd()). Caches the result per absolute
+ * configPath for the process lifetime.
+ *
+ * Note: cache lifetime = process lifetime. Not safe across config edits in
+ * long-lived processes; call __resetCache() if the config may change.
+ *
+ * @param {string} configPath  Absolute or relative path to .orchestrator.json.
+ * @returns {ShardLibrary[]}   Validated, path-resolved libraries. Callers must NOT mutate.
+ * @throws {ShardLibraryError}     Config file unreadable, or no libraries can be derived.
+ * @throws {ShardValidationError}  Invalid JSON in config, or any library entry fails validation.
+ */
+export function loadLibraries(configPath) {
+  const abs = path.resolve(configPath);
+  if (_cache.has(abs)) return _cache.get(abs);
+
+  // 1. Read + parse config (guarded — LD-BUG-004)
+  let cfg;
+  let raw;
+  try {
+    raw = fs.readFileSync(abs, 'utf8');
+  } catch (e) {
+    throw new ShardLibraryError(`Failed to read config ${abs}: ${e.message}`);
+  }
+  try {
+    cfg = JSON.parse(raw);
+  } catch (e) {
+    throw new ShardValidationError(`Invalid JSON in ${abs}: ${e.message}`);
+  }
+
+  const configDir = path.dirname(abs);
+  let libs;
+
+  if (Array.isArray(cfg.shardLibraries) && cfg.shardLibraries.length > 0) {
+    // Explicit config — validate-all-or-abort (LD-PAT-007)
+    const errors = [];
+    const out = [];
+    for (let i = 0; i < cfg.shardLibraries.length; i++) {
+      try {
+        out.push(_normalizeLibrary(cfg.shardLibraries[i], configDir, i));
+      } catch (e) {
+        errors.push(e.message);
+      }
+    }
+    if (errors.length > 0) {
+      throw new ShardValidationError(
+        `Invalid shardLibraries[] in ${abs}:\n  - ${errors.join('\n  - ')}`
+      );
+    }
+    libs = out;
+  } else {
+    // Synthesize from legacy tasksSource.primary (blueprint §3)
+    libs = [_synthesizeLegacyLibrary(cfg, configDir, abs)];
+  }
+
+  _cache.set(abs, libs);
+  return libs;
+}
+
+/**
+ * Locate a shard JSON file by ID under a library.
+ *
+ * Convention: `<library.shardDir>/<id>.json` (e.g. `.tasks/tasks/TASK-001.json`).
+ * Returns null if the file does not exist — never throws on missing.
+ *
+ * @param {ShardLibrary} library  Library handle from loadLibraries.
+ * @param {string} id             Shard ID (e.g. "TASK-001"). Must match /^[A-Z][A-Z0-9_]*-\d+$/.
+ * @returns {string|null}         Absolute path to the shard file, or null if not found.
+ * @throws {ShardLibraryError}    If library is malformed (missing shardDir), id is not a
+ *                                non-empty string, or id fails the safe-id regex (path-traversal guard).
+ */
+export function locateShard(library, id) {
+  if (!library || typeof library.shardDir !== 'string') {
+    throw new ShardLibraryError('locateShard: library is missing shardDir');
+  }
+  validateShardId(id);
+  const candidate = path.join(library.shardDir, `${id}.json`);
+  return fs.existsSync(candidate) ? candidate : null;
+}
+
+/**
+ * Atomically read → mutate → write a shard. Mutator receives the parsed shard
+ * and must return the new shard. On any failure between locate and rename,
+ * the original file is left byte-identical and the .tmp file is best-effort
+ * cleaned up (LD-PAT-002).
+ *
+ * Validation is intentionally cheap (presence of id/status/updated). Full
+ * schema validation belongs to the rebuild CLI (library.rebuildCmd) — see
+ * LD-ARC-002. This module never writes INDEX.json.
+ *
+ * @param {ShardLibrary} library                       Library handle from loadLibraries.
+ * @param {string} id                                  Shard ID (e.g. "TASK-001"). Must match /^[A-Z][A-Z0-9_]*-\d+$/.
+ * @param {(shard: object) => object} mutator          Pure function returning the new shard.
+ * @returns {object}                                   The written shard.
+ * @throws {ShardNotFoundError}    Shard file does not exist.
+ * @throws {ShardValidationError}  Mutator returned an invalid shape, or file contained invalid JSON.
+ * @throws {ShardLibraryError}     Read/write/rename failure, or id fails the safe-id regex
+ *                                 (path-traversal guard, raised before any FS access).
+ */
+export function updateShard(library, id, mutator) {
+  // 1. Locate (locateShard validates id via validateShardId — guard runs before any FS access)
+  const target = locateShard(library, id);
+  if (target === null) {
+    throw new ShardNotFoundError(
+      `Shard ${id} not found in library ${library.id} (looked under ${library.shardDir})`
+    );
+  }
+
+  // 2. Read + parse (guarded — LD-BUG-004)
+  let raw, current;
+  try {
+    raw = fs.readFileSync(target, 'utf8');
+  } catch (e) {
+    throw new ShardLibraryError(`Failed to read ${target}: ${e.message}`);
+  }
+  try {
+    current = JSON.parse(raw);
+  } catch (e) {
+    throw new ShardValidationError(`Invalid JSON in ${target}: ${e.message}`);
+  }
+
+  // 3. Mutate + validate shape
+  const next = mutator(current);
+  validateShardShape(next, target);
+
+  // 4. Atomic write (LD-PAT-002)
+  const tmp = path.join(path.dirname(target), path.basename(target) + '.tmp');
+  const payload = JSON.stringify(next, null, 2) + '\n';
+  try {
+    fs.writeFileSync(tmp, payload, 'utf8');
+    fs.renameSync(tmp, target); // atomic on same filesystem (POSIX + NTFS)
+  } catch (e) {
+    // Best-effort cleanup of orphan tmp; ignore unlink failures.
+    try { fs.unlinkSync(tmp); } catch { /* ignore */ }
+    throw new ShardLibraryError(`Atomic write failed for ${target}: ${e.message}`);
+  }
+
+  return next;
+}
+
+/**
+ * Invoke library.rebuildCmd via execSync to regenerate INDEX.json.
+ * NEVER throws. Captures stderr. Emits an actionable console.warn on failure
+ * so operators see install hints / non-zero exits without grepping return values.
+ *
+ * Honors LD-ARC-002 (this module never writes INDEX.json itself; it shells out
+ * to the configured rebuild CLI) and LD-BUG-010 (no process.exit in lib code).
+ *
+ * @param {ShardLibrary} library  Library handle from loadLibraries.
+ * @returns {{ ok: true } | { ok: false, reason: string }}
+ *          Result object. `ok: false` includes a human-readable reason; the
+ *          same reason text is also emitted via console.warn (except for the
+ *          intentional null-rebuildCmd opt-out, which warns nothing).
+ * @throws {never} This function does not throw under any circumstance.
+ */
+// SPRINT-2 INTEGRATION POINT: invoked by branch-setup.mjs after status flip. Currently consumed only by tests/shard-library.test.mjs.
+export function rebuildLibrary(library) {
+  // 1. No command configured — operator opted out, silent skip.
+  const cmd = library?.rebuildCmd;
+  if (cmd === null || cmd === undefined || (typeof cmd === 'string' && cmd.length === 0)) {
+    return { ok: false, reason: `library '${library?.id ?? '<unknown>'}' has no rebuildCmd configured` };
+  }
+
+  try {
+    execSync(cmd, {
+      cwd: library.indexDir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    });
+    return { ok: true };
+  } catch (e) {
+    const stderr = (e && e.stderr ? e.stderr.toString() : '').trim();
+    const stderrLc = stderr.toLowerCase();
+    const isEnoent =
+      (e && e.code === 'ENOENT') ||
+      stderrLc.includes('not recognized') ||
+      stderrLc.includes('not found') ||
+      stderrLc.includes('command not found');
+
+    let reason;
+    if (isEnoent) {
+      // Best-effort install hint: strip leading "npx " / "node ", take first token.
+      const stripped = String(cmd).replace(/^\s*(?:npx|node)\s+/i, '').trim();
+      const guess = stripped.split(/\s+/)[0] || cmd;
+      reason =
+        `rebuild CLI not found for library '${library.id}'. ` +
+        `Install it (e.g. \`npm i -g ${guess}\`) or fix rebuildCmd ` +
+        `(configured: "${cmd}")`;
+    } else if (typeof e?.status === 'number') {
+      const tail = (stderr || '(no stderr)').slice(0, 500);
+      reason = `rebuild for library '${library.id}' exited ${e.status}: ${tail}`;
+    } else {
+      reason = `rebuild for library '${library.id}' failed: ${e?.message ?? String(e)}`;
+    }
+    console.warn(`[shard-library] ${reason}`);
+    return { ok: false, reason };
+  }
+}
+
+/**
+ * Resolve the `{ start, done }` status vocabulary for a library.
+ *
+ * Resolution order:
+ *   1. If `library.statusMap` has both `start` and `done` (non-empty strings),
+ *      validate shape and return it as-is. Operator override is authoritative
+ *      and is NOT cross-checked against the schema enum (LD-PAT-007).
+ *   2. Otherwise load `library.schemaPath`, extract `properties.status.enum`,
+ *      and apply the start/done heuristic regexes. Exactly one match per role
+ *      is required.
+ *
+ * Result is cached per library object identity (WeakMap) for the process
+ * lifetime; only `__resetCache()` invalidates it. Single source of truth
+ * (LD-ARC-001) — other modules MUST call this rather than re-deriving.
+ *
+ * @param {ShardLibrary} library  Library handle from loadLibraries.
+ * @returns {{ start: string, done: string }}
+ * @throws {ShardLibraryError}    statusMap partially set or non-string values;
+ *                                schema file missing/unreadable; enum missing
+ *                                or empty; 0 or >1 heuristic matches per role.
+ * @throws {ShardValidationError} Schema file contains malformed JSON.
+ */
+// SPRINT-2/3 INTEGRATION POINT: branch-setup uses 'in-progress', merge-task uses 'done'. Currently consumed only by tests/shard-library.test.mjs.
+export function resolveStatusVocab(library) {
+  if (!library || typeof library !== 'object') {
+    throw new ShardLibraryError('resolveStatusVocab: library must be an object');
+  }
+  const cached = _statusVocabCache.get(library);
+  if (cached) return cached;
+
+  const libId = library.id ?? '<unknown>';
+  const sm = library.statusMap;
+
+  // 1. Operator override path
+  if (sm !== null && sm !== undefined) {
+    if (typeof sm !== 'object') {
+      throw new ShardLibraryError(
+        `library '${libId}'.statusMap must be an object with 'start' and 'done' string keys`
+      );
+    }
+    const hasStart = typeof sm.start === 'string' && sm.start.length > 0;
+    const hasDone  = typeof sm.done  === 'string' && sm.done.length  > 0;
+    if (hasStart && hasDone) {
+      const out = { start: sm.start, done: sm.done };
+      _statusVocabCache.set(library, out);
+      return out;
+    }
+    // Partial / invalid — refuse to guess (LD-PAT-007 validate-all-or-abort)
+    const present = Object.keys(sm).join(', ') || '(none)';
+    throw new ShardLibraryError(
+      `library '${libId}'.statusMap must define both 'start' and 'done' as non-empty strings ` +
+      `(got keys: ${present}). Set both, or remove statusMap to use the schema heuristic.`
+    );
+  }
+
+  // 2. Schema heuristic path
+  const enumVals = _loadStatusEnum(library);
+  const start = _matchOne(enumVals, START_RE, 'start', libId, library.schemaPath);
+  const done  = _matchOne(enumVals, DONE_RE,  'done',  libId, library.schemaPath);
+  const out = { start, done };
+  _statusVocabCache.set(library, out);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+// Safe-id regex: uppercase prefix + optional [A-Z0-9_], single hyphen, then digits.
+// Matches "TASK-001", "ISSUE-042", "BUG_FIX-7". Rejects "../foo", "task-1" (lowercase),
+// "TASK001" (no hyphen), "TASK-1.json" (extension), "TASK-1/x" (separator).
+// Anchors + restricted character class together prevent path traversal and absolute paths.
+const SAFE_SHARD_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
+
+// Status-vocab heuristics (resolveStatusVocab). Anchored, case-insensitive.
+// Match common start-states (in-progress / active / wip / started) and
+// terminal states (done / completed / closed / resolved / fixed).
+const START_RE = /^(in[-_]?progress|active|started|wip)$/i;
+const DONE_RE  = /^(done|completed?|closed|resolved|fixed)$/i;
+
+function validateShardId(id) {
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new ShardLibraryError('shard id must be a non-empty string');
+  }
+  if (!SAFE_SHARD_ID.test(id)) {
+    throw new ShardLibraryError(
+      `shard id "${id}" is not safe — must match ${SAFE_SHARD_ID} ` +
+      `(uppercase prefix, hyphen, digits; e.g. "TASK-001")`
+    );
+  }
+}
+
+function _normalizeLibrary(entry, configDir, indexHint) {
+  if (!entry || typeof entry !== 'object') {
+    throw new ShardValidationError(`shardLibraries[${indexHint}]: entry must be an object`);
+  }
+  const required = ['id', 'indexPath', 'shardDir', 'rebuildCmd'];
+  for (const f of required) {
+    if (typeof entry[f] !== 'string' || entry[f].length === 0) {
+      throw new ShardValidationError(
+        `shardLibraries[${indexHint}]: missing or invalid required field "${f}"`
+      );
+    }
+  }
+  const indexPath = path.resolve(configDir, entry.indexPath);
+  const shardDir = path.resolve(configDir, entry.shardDir);
+  const indexDir = path.dirname(indexPath);
+  const schemaPath = entry.schemaPath
+    ? path.resolve(configDir, entry.schemaPath)
+    : path.join(indexDir, 'schemas', 'task.schema.json');
+
+  return {
+    id:         entry.id,
+    name:       entry.name || entry.id,
+    indexPath,
+    indexDir,
+    shardDir,
+    schemaPath,
+    statusMap:  entry.statusMap ?? null,
+    linkField:  entry.linkField ?? null,
+    primary:    entry.primary === true,
+    rebuildCmd: entry.rebuildCmd,
+  };
+}
+
+function _synthesizeLegacyLibrary(cfg, configDir, configPath) {
+  const primary = cfg?.tasksSource?.primary ?? null;
+
+  if (primary === null) {
+    throw new ShardLibraryError(
+      `No shardLibraries configured and no tasksSource.primary in ${configPath}. ` +
+      `Add a shardLibraries[] entry to enable shard I/O.`
+    );
+  }
+
+  if (typeof primary === 'string' && primary.endsWith('.json')) {
+    const indexPath = path.resolve(configDir, primary);
+    const indexDir = path.dirname(indexPath);
+    const lib = {
+      id: 'tasks',
+      name: 'Tasks',
+      indexPath,
+      indexDir,
+      shardDir:   path.join(indexDir, 'tasks'),
+      schemaPath: path.join(indexDir, 'schemas', 'task.schema.json'),
+      statusMap:  null,
+      linkField:  'resolves',
+      primary:    true,
+      rebuildCmd: 'npx tasklist-rebuild',
+    };
+    debugWarn(
+      `Synthesized "tasks" library from tasksSource.primary=${primary}. ` +
+      `Defaults: shardDir=${lib.shardDir}, schemaPath=${lib.schemaPath}, ` +
+      `rebuildCmd="${lib.rebuildCmd}", linkField="resolves". ` +
+      `Set shardLibraries[] in .orchestrator.json to silence.`
+    );
+    return lib;
+  }
+
+  // CASE B — Markdown primary (current orchestrator state)
+  const indexDir = path.join(configDir, '.tasks');
+  const lib = {
+    id: 'tasks',
+    name: 'Tasks',
+    indexPath:  path.join(indexDir, 'INDEX.json'),
+    indexDir,
+    shardDir:   path.join(indexDir, 'tasks'),
+    schemaPath: path.join(indexDir, 'schemas', 'task.schema.json'),
+    statusMap:  null,
+    linkField:  'resolves',
+    primary:    true,
+    rebuildCmd: 'npx tasklist-rebuild',
+  };
+  debugWarn(
+    `tasksSource.primary points at Markdown "${primary}"; ` +
+    `synthesizing default .tasks/ library. Defaults: indexPath=${lib.indexPath}, ` +
+    `shardDir=${lib.shardDir}, rebuildCmd="${lib.rebuildCmd}". ` +
+    `Set shardLibraries[] in .orchestrator.json to silence.`
+  );
+  return lib;
+}
+
+function validateShardShape(shard, sourcePath) {
+  if (!shard || typeof shard !== 'object') {
+    throw new ShardValidationError(`Mutator returned non-object for ${sourcePath}`);
+  }
+  for (const f of ['id', 'status', 'updated']) {
+    if (typeof shard[f] !== 'string' || shard[f].length === 0) {
+      throw new ShardValidationError(
+        `Mutator returned shard missing required field "${f}" for ${sourcePath}`
+      );
+    }
+  }
+  // Cheap ISO-8601 sniff — full validation is the rebuild CLI's job.
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(shard.updated)) {
+    throw new ShardValidationError(
+      `Field "updated" must be ISO-8601 timestamp, got "${shard.updated}" in ${sourcePath}`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status-vocab helpers (resolveStatusVocab)
+// ---------------------------------------------------------------------------
+
+function _loadStatusEnum(library) {
+  const libId = library.id ?? '<unknown>';
+  const schemaPath = library.schemaPath;
+  if (typeof schemaPath !== 'string' || schemaPath.length === 0) {
+    throw new ShardLibraryError(
+      `Cannot resolve status vocab for library '${libId}': no schemaPath set. ` +
+      `Set statusMap in .orchestrator.json or provide schemaPath.`
+    );
+  }
+  if (!fs.existsSync(schemaPath)) {
+    throw new ShardLibraryError(
+      `Cannot resolve status vocab for library '${libId}': schema not found at ${schemaPath}. ` +
+      `Set statusMap in .orchestrator.json or provide schemaPath.`
+    );
+  }
+
+  let raw, schema;
+  try {
+    raw = fs.readFileSync(schemaPath, 'utf8');
+  } catch (e) {
+    throw new ShardLibraryError(
+      `Cannot read schema for library '${libId}' at ${schemaPath}: ${e.message}. ` +
+      `Set statusMap in .orchestrator.json to bypass schema reads.`
+    );
+  }
+  try {
+    schema = JSON.parse(raw);
+  } catch (e) {
+    throw new ShardValidationError(`Invalid JSON in ${schemaPath}: ${e.message}`);
+  }
+
+  const enumVals = schema?.properties?.status?.enum;
+  if (!Array.isArray(enumVals) || !enumVals.every((v) => typeof v === 'string')) {
+    throw new ShardLibraryError(
+      `Schema at ${schemaPath} has no \`properties.status.enum\` string array; ` +
+      `cannot infer status vocab for library '${libId}'. Set statusMap explicitly.`
+    );
+  }
+  return enumVals;
+}
+
+function _matchOne(enumVals, regex, role, libId, schemaPath) {
+  const matches = enumVals.filter((v) => regex.test(v));
+  if (matches.length === 1) return matches[0];
+
+  const enumStr = JSON.stringify(enumVals);
+  const remediation =
+    `Set \`statusMap\` for library '${libId}' in .orchestrator.json, ` +
+    `e.g. "statusMap": { "start": "...", "done": "..." }.`;
+
+  if (matches.length === 0) {
+    throw new ShardLibraryError(
+      `Cannot infer '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
+      `no enum value matched ${regex} (enum: ${enumStr}). ${remediation}`
+    );
+  }
+  throw new ShardLibraryError(
+    `Ambiguous '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
+    `${matches.length} enum values matched ${regex} → ${JSON.stringify(matches)} ` +
+    `(enum: ${enumStr}). ${remediation}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Cross-library link scanning (scanLinks) — PLAN §3c
+// ---------------------------------------------------------------------------
+
+const LINK_ID_RE      = /^[A-Z][A-Z0-9_]*-\d+$/i;
+const LINK_KEYWORD_RE = /\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?)\s+([A-Z][A-Z0-9_]*-\d+)/gi;
+const SHARD_FILE_RE   = /^([A-Z][A-Z0-9_]*)-\d+\.json$/;
+
+/**
+ * Scan a task shard for links to other libraries.
+ *
+ * Two link sources are unioned and deduped:
+ *   1. Explicit  — taskShard[library.linkField] (string OR string[]); skipped
+ *                  when linkField is null/undefined or the field is absent.
+ *   2. Keyword   — regex over (description ?? '') + '\n' + (notes ?? '')
+ *                  matching /\b(fix(es|ed)?|close[sd]?|resolve[sd]?)\s+ID/gi.
+ *
+ * Each candidate ID is uppercased then routed to a library by matching its
+ * leading prefix (chars before the dash) against the prefix sampled from
+ * each library's existing shards. Unknown prefixes are dropped with an
+ * actionable console.warn (LD-PAT-007). The current task's own ID is always
+ * excluded.
+ *
+ * Pure & sync. Performs at most one fs.readdirSync per library per process
+ * (cached in _prefixCache). No top-level I/O (LD-PAT-001 / LD-BUG-010).
+ *
+ * @param {object}          taskShard    Loaded task shard JSON. Must have a
+ *                                       string `id`; all other fields optional.
+ * @param {ShardLibrary[]}  allLibraries Output of loadLibraries(); scanned in order.
+ * @returns {Map<string, Set<string>>}   libraryId -> Set of linked shard IDs.
+ *                                       Libraries with zero hits are omitted.
+ *                                       Empty Map when nothing is linked.
+ * @throws {ShardLibraryError}           taskShard is not an object, or
+ *                                       taskShard.id is missing/invalid, or
+ *                                       allLibraries is not an array.
+ */
+// SPRINT-3 INTEGRATION POINT: merge-task.mjs walks links to flip linked-library shards (e.g. ISSUE-N) with resolved_by notes. Currently consumed only by tests/shard-library.test.mjs.
+export function scanLinks(taskShard, allLibraries) {
+  if (!taskShard || typeof taskShard !== 'object') {
+    throw new ShardLibraryError('scanLinks: taskShard must be an object');
+  }
+  if (typeof taskShard.id !== 'string' || taskShard.id.length === 0) {
+    throw new ShardLibraryError('scanLinks: taskShard.id must be a non-empty string');
+  }
+  if (!Array.isArray(allLibraries)) {
+    throw new ShardLibraryError('scanLinks: allLibraries must be an array');
+  }
+
+  const result = new Map();
+  if (allLibraries.length === 0) return result;
+
+  const selfId = taskShard.id.toUpperCase();
+  const prefixIndex = _buildPrefixIndex(allLibraries);
+  const ownerId = String(taskShard.id ?? '');
+  const selfPrefixMatch = ownerId.match(/^([A-Z][A-Z0-9_]*)-\d+$/i);
+  const selfPrefix = selfPrefixMatch ? selfPrefixMatch[1].toUpperCase() : null;
+
+  // 1. Explicit pass — for each library with a linkField, read taskShard[linkField].
+  //    Always routes to that owning library regardless of ID prefix.
+  for (const library of allLibraries) {
+    if (!library || typeof library.linkField !== 'string' || library.linkField.length === 0) {
+      continue;
+    }
+    const explicit = _collectExplicit(taskShard, library);
+    for (const id of explicit) {
+      if (id === selfId) continue;
+      _addLink(result, library.id, id);
+    }
+  }
+
+  // 2. Keyword pass — scan description + notes; route by sampled prefix.
+  const keywordIds = _collectKeywords(taskShard);
+  for (const id of keywordIds) {
+    if (id === selfId) continue;
+    const prefixMatch = id.match(/^([A-Z][A-Z0-9_]*)-\d+$/);
+    if (!prefixMatch) continue;
+    const prefix = prefixMatch[1];
+    const library = prefixIndex.get(prefix);
+    if (!library) {
+      // Self-prefix that didn't match a routable library → silent (self-ref handled above too).
+      if (selfPrefix && prefix === selfPrefix) continue;
+      console.warn(
+        `[shard-library] scanLinks: unknown ID prefix '${prefix}' in '${id}' ` +
+        `(task ${taskShard.id}); no library's shards start with '${prefix}-'. ` +
+        `Add a library with matching shards or remove the reference.`
+      );
+      continue;
+    }
+    _addLink(result, library.id, id);
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// scanLinks helpers
+// ---------------------------------------------------------------------------
+
+function _resolveLibraryPrefix(library) {
+  if (!library || typeof library !== 'object') return null;
+  if (_prefixCache.has(library)) return _prefixCache.get(library);
+
+  let prefix = null;
+  const dir = library.shardDir;
+  if (typeof dir === 'string' && dir.length > 0) {
+    let entries = null;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch (e) {
+      debugWarn(`scanLinks: cannot read shardDir for library '${library.id}' (${dir}): ${e.message}`);
+    }
+    if (Array.isArray(entries)) {
+      const matches = entries
+        .filter((name) => SHARD_FILE_RE.test(name))
+        .sort();
+      if (matches.length > 0) {
+        const m = matches[0].match(SHARD_FILE_RE);
+        if (m) prefix = m[1];
+      } else {
+        debugWarn(`scanLinks: no shard files found under '${dir}' for library '${library.id}'; prefix unresolved`);
+      }
+    }
+  }
+  _prefixCache.set(library, prefix);
+  if (prefix) debugWarn(`scanLinks: prefix for library '${library.id}' = '${prefix}'`);
+  return prefix;
+}
+
+function _buildPrefixIndex(allLibraries) {
+  const index = new Map();
+  for (const library of allLibraries) {
+    const prefix = _resolveLibraryPrefix(library);
+    if (!prefix) continue;
+    if (index.has(prefix)) {
+      const winner = index.get(prefix);
+      console.warn(
+        `[shard-library] scanLinks: prefix '${prefix}' claimed by both libraries ` +
+        `'${winner.id}' and '${library.id}'; routing to '${winner.id}' (first declared in shardLibraries[]).`
+      );
+      continue;
+    }
+    index.set(prefix, library);
+  }
+  return index;
+}
+
+function _collectExplicit(taskShard, library) {
+  const out = new Set();
+  const field = library.linkField;
+  const value = taskShard[field];
+  if (value === undefined || value === null) return out;
+
+  let items;
+  if (Array.isArray(value)) {
+    items = value;
+  } else if (typeof value === 'string') {
+    items = [value];
+  } else {
+    console.warn(
+      `[shard-library] scanLinks: field '${field}' on task ${taskShard.id} is ` +
+      `${typeof value} (expected string or string[]); skipping. ` +
+      `Set '${field}' to an array of shard IDs (e.g. ["ISSUE-001"]).`
+    );
+    return out;
+  }
+
+  for (const entry of items) {
+    if (typeof entry !== 'string') {
+      console.warn(
+        `[shard-library] scanLinks: non-string entry in '${field}' on task ${taskShard.id}: ` +
+        `${JSON.stringify(entry)}; skipping. Each entry must be a shard ID string.`
+      );
+      continue;
+    }
+    const trimmed = entry.trim();
+    if (trimmed.length === 0) continue;
+    if (!LINK_ID_RE.test(trimmed)) {
+      console.warn(
+        `[shard-library] scanLinks: invalid shard ID '${trimmed}' in '${field}' on task ${taskShard.id}; ` +
+        `expected pattern PREFIX-NNN (e.g. ISSUE-001). Skipping.`
+      );
+      continue;
+    }
+    out.add(trimmed.toUpperCase());
+  }
+  return out;
+}
+
+function _collectKeywords(taskShard) {
+  const desc = typeof taskShard.description === 'string' ? taskShard.description : '';
+  const notes = typeof taskShard.notes === 'string' ? taskShard.notes : '';
+  const text = desc + '\n' + notes;
+  const ids = [];
+  if (text.length === 0) return ids;
+  // Reset lastIndex defensively (regex is module-scoped + /g).
+  LINK_KEYWORD_RE.lastIndex = 0;
+  let m;
+  while ((m = LINK_KEYWORD_RE.exec(text)) !== null) {
+    ids.push(m[1].toUpperCase());
+  }
+  return ids;
+}
+
+function _addLink(map, libId, id) {
+  let set = map.get(libId);
+  if (!set) {
+    set = new Set();
+    map.set(libId, set);
+  }
+  set.add(id);
+}
