@@ -245,6 +245,7 @@ export function updateShard(library, id, mutator) {
  *          intentional null-rebuildCmd opt-out, which warns nothing).
  * @throws {never} This function does not throw under any circumstance.
  */
+// SPRINT-2 INTEGRATION POINT: invoked by branch-setup.mjs after status flip. Currently consumed only by tests/shard-library.test.mjs.
 export function rebuildLibrary(library) {
   // 1. No command configured — operator opted out, silent skip.
   const cmd = library?.rebuildCmd;
@@ -310,6 +311,7 @@ export function rebuildLibrary(library) {
  *                                or empty; 0 or >1 heuristic matches per role.
  * @throws {ShardValidationError} Schema file contains malformed JSON.
  */
+// SPRINT-2/3 INTEGRATION POINT: branch-setup uses 'in-progress', merge-task uses 'done'. Currently consumed only by tests/shard-library.test.mjs.
 export function resolveStatusVocab(library) {
   if (!library || typeof library !== 'object') {
     throw new ShardLibraryError('resolveStatusVocab: library must be an object');
@@ -591,6 +593,7 @@ const SHARD_FILE_RE   = /^([A-Z][A-Z0-9_]*)-\d+\.json$/;
  *                                       taskShard.id is missing/invalid, or
  *                                       allLibraries is not an array.
  */
+// SPRINT-3 INTEGRATION POINT: merge-task.mjs walks links to flip linked-library shards (e.g. ISSUE-N) with resolved_by notes. Currently consumed only by tests/shard-library.test.mjs.
 export function scanLinks(taskShard, allLibraries) {
   if (!taskShard || typeof taskShard !== 'object') {
     throw new ShardLibraryError('scanLinks: taskShard must be an object');
