@@ -6,3 +6,4 @@
 | 2026-05-01T20:06 | 002 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Provenance table is sufficient for drift detection: source repo, full SHA (73a757bfd4de524e7ca5aed777c34b8a38719797), source path, and derivation kind are all captured. Honors LD-ARC-001.; info:S |
 | 2026-05-01T20:21 | 003 | 2 | pass | skip | skip | approve,approve,approve | PASS |  |
 | 2026-05-01T20:21 | 003 | 2 | pass | skip | skip | approve,approve,approve | PASS |  |
+| 2026-05-01T20:30 | 004 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:; info:; info:; info:; info:; info:; info:; info:; info: |
