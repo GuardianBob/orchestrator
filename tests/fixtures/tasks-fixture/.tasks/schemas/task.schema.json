@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gen-tasklist.dev/task.schema.json",
+  "title": "Task Shard",
+  "description": "A single task in the .tasks/tasks/ directory. The source of truth.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "status", "effort", "created", "updated"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TASK-\\d{3,}$",
+      "description": "Stable identifier. Must match filename stem."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["backlog", "ready", "in-progress", "blocked", "review", "done", "cancelled"]
+    },
+    "effort": {
+      "type": "string",
+      "enum": ["XS", "S", "M", "L", "XL"]
+    },
+    "hours_estimate": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "hours_actual": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "urgent"]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "started": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "completed": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+      "uniqueItems": true
+    },
+    "blocks": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^TASK-\\d{3,}$" },
+      "uniqueItems": true
+    },
+    "assignee": {
+      "type": ["string", "null"]
+    },
+    "reviewer": {
+      "type": ["string", "null"]
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

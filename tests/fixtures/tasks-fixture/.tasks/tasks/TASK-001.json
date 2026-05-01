@@ -1,0 +1,16 @@
+{
+  "id": "TASK-001",
+  "title": "Seed task — completed",
+  "description": "Fixture shard demonstrating the `done` terminal state.",
+  "status": "done",
+  "effort": "S",
+  "priority": "medium",
+  "tags": ["fixture", "seed"],
+  "created": "2026-01-01T00:00:00.000Z",
+  "updated": "2026-01-02T12:00:00.000Z",
+  "started": "2026-01-01T09:00:00.000Z",
+  "completed": "2026-01-02T12:00:00.000Z",
+  "hours_estimate": 1.5,
+  "hours_actual": 2,
+  "acceptance_criteria": ["fixture validates against task.schema.json"]
+}

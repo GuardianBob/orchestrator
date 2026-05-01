@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gen-issues.dev/index.schema.json",
+  "title": "Issues Index",
+  "description": "Derived index of all issue shards. Derived from gen-tasklist index.schema.json @ 73a757b with vocab swap (next_task_id→next_issue_id, status enums for issue lifecycle).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generator",
+    "updated",
+    "next_issue_id",
+    "previous_issue",
+    "current_issue",
+    "next_issue",
+    "open_issues",
+    "blocked_issues",
+    "counts",
+    "effort_summary"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generator": { "type": "string" },
+    "updated": { "type": "string", "format": "date-time" },
+    "project_root": { "type": "string" },
+    "next_issue_id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+
+    "previous_issue": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+            "title": { "type": "string" },
+            "status": { "type": "string", "enum": ["resolved", "wontfix", "duplicate"] },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "completed": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "current_issue": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+            "title": { "type": "string" },
+            "status": { "type": "string", "const": "in-progress" },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "started": { "type": ["string", "null"], "format": "date-time" },
+            "assignee": { "type": ["string", "null"] },
+            "depends_on": { "type": "array", "items": { "type": "string" } },
+            "acceptance_criteria_count": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "next_issue": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "title", "status", "effort"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+            "title": { "type": "string" },
+            "status": {
+              "type": "string",
+              "enum": ["open", "triage"]
+            },
+            "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+            "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+            "depends_on": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+
+    "open_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "status", "effort"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+          "title": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "triage", "in-progress", "blocked"] },
+          "effort": { "type": "string", "enum": ["XS", "S", "M", "L", "XL"] },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
+    "blocked_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "blocked_by", "title"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" },
+          "blocked_by": { "type": "array", "items": { "type": "string", "pattern": "^ISSUE-\\d{3,}$" } },
+          "title": { "type": "string" }
+        }
+      }
+    },
+
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "open", "triage", "in_progress", "blocked", "resolved", "wontfix", "duplicate", "active", "closed", "archived"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "triage": { "type": "integer", "minimum": 0 },
+        "in_progress": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "wontfix": { "type": "integer", "minimum": 0 },
+        "duplicate": { "type": "integer", "minimum": 0 },
+        "active": { "type": "integer", "minimum": 0 },
+        "closed": { "type": "integer", "minimum": 0 },
+        "archived": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "effort_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["open_hours", "closed_estimate_hours", "closed_actual_hours"],
+      "properties": {
+        "open_hours": { "type": "number", "minimum": 0 },
+        "closed_estimate_hours": { "type": "number", "minimum": 0 },
+        "closed_actual_hours": { "type": "number", "minimum": 0 },
+        "estimate_accuracy": { "type": ["number", "null"], "minimum": 0 }
+      }
+    }
+  }
+}

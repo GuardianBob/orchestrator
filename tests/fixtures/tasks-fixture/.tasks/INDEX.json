@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "generator": "tasklist-rebuild@1.0.0",
+  "updated": "2026-01-05T00:00:00.000Z",
+  "project_root": "tests/fixtures/tasks-fixture",
+  "next_task_id": "TASK-004",
+  "previous_task": {
+    "id": "TASK-001",
+    "title": "Seed task — completed",
+    "status": "done",
+    "effort": "S",
+    "completed": "2026-01-02T12:00:00.000Z"
+  },
+  "current_task": {
+    "id": "TASK-002",
+    "title": "Seed task — in progress",
+    "status": "in-progress",
+    "effort": "M",
+    "started": "2026-01-04T08:30:00.000Z",
+    "assignee": "fixture-bot",
+    "depends_on": ["TASK-001"],
+    "acceptance_criteria_count": 2
+  },
+  "next_task": {
+    "id": "TASK-003",
+    "title": "Seed task — backlog",
+    "status": "backlog",
+    "effort": "L",
+    "priority": "low",
+    "depends_on": ["TASK-002"]
+  },
+  "open_tasks": [
+    {
+      "id": "TASK-002",
+      "title": "Seed task — in progress",
+      "status": "in-progress",
+      "effort": "M"
+    },
+    {
+      "id": "TASK-003",
+      "title": "Seed task — backlog",
+      "status": "backlog",
+      "effort": "L"
+    }
+  ],
+  "blocked_tasks": [],
+  "counts": {
+    "total": 3,
+    "backlog": 1,
+    "ready": 0,
+    "in_progress": 1,
+    "blocked": 0,
+    "review": 0,
+    "done": 1,
+    "cancelled": 0,
+    "open": 2,
+    "closed": 1,
+    "archived": 0
+  },
+  "effort_summary": {
+    "open_hours": 12,
+    "closed_estimate_hours": 1.5,
+    "closed_actual_hours": 2,
+    "estimate_accuracy": 0.75
+  }
+}
