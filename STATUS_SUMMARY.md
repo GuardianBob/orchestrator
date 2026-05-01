@@ -14,3 +14,5 @@
 - [2026-05-01] Completed task-006: test(task-006): unit tests for shard-library.mjs (10 exports, 6 APIs)
 
 - [2026-05-01] Completed task-007: expose shardLibraries on loaded config
+
+- [2026-05-01] Completed task-008: test(task-008): migrate snapshot tests to controlled fixture
