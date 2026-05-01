@@ -10,3 +10,5 @@
 - [2026-05-01] Completed task-004: add rebuildLibrary + resolveStatusVocab to shard-library
 
 - [2026-05-01] Completed task-005: add scanLinks to shard-library
+
+- [2026-05-01] Completed task-006: test(task-006): unit tests for shard-library.mjs (10 exports, 6 APIs)
