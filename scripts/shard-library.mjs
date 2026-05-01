@@ -12,6 +12,8 @@
 //
 // PATH CONTRACT (LD-XPL-001):
 //   - Every path constructed via path.join / path.resolve. No string concat.
+//   - Shard IDs are validated against /^[A-Z][A-Z0-9_]*-\d+$/ before being used
+//     as filename stems, preventing path traversal (e.g. "../../etc/passwd").
 //
 // I/O choice — synchronous fs (not fs/promises). Rationale:
 //   1. Matches existing scripts/load-config.mjs style — single I/O paradigm.
@@ -83,6 +85,9 @@ function debugWarn(...args) {
  * (LD-CLI-001 — never against process.cwd()). Caches the result per absolute
  * configPath for the process lifetime.
  *
+ * Note: cache lifetime = process lifetime. Not safe across config edits in
+ * long-lived processes; call __resetCache() if the config may change.
+ *
  * @param {string} configPath  Absolute or relative path to .orchestrator.json.
  * @returns {ShardLibrary[]}   Validated, path-resolved libraries. Callers must NOT mutate.
  * @throws {ShardLibraryError}     Config file unreadable, or no libraries can be derived.
@@ -142,17 +147,16 @@ export function loadLibraries(configPath) {
  * Returns null if the file does not exist — never throws on missing.
  *
  * @param {ShardLibrary} library  Library handle from loadLibraries.
- * @param {string} id             Shard ID (e.g. "TASK-001"). Used verbatim as filename stem.
+ * @param {string} id             Shard ID (e.g. "TASK-001"). Must match /^[A-Z][A-Z0-9_]*-\d+$/.
  * @returns {string|null}         Absolute path to the shard file, or null if not found.
- * @throws {ShardLibraryError}    If library is malformed (missing shardDir) or id is invalid.
+ * @throws {ShardLibraryError}    If library is malformed (missing shardDir), id is not a
+ *                                non-empty string, or id fails the safe-id regex (path-traversal guard).
  */
 export function locateShard(library, id) {
   if (!library || typeof library.shardDir !== 'string') {
     throw new ShardLibraryError('locateShard: library is missing shardDir');
   }
-  if (typeof id !== 'string' || id.length === 0) {
-    throw new ShardLibraryError('locateShard: id must be a non-empty string');
-  }
+  validateShardId(id);
   const candidate = path.join(library.shardDir, `${id}.json`);
   return fs.existsSync(candidate) ? candidate : null;
 }
@@ -168,15 +172,16 @@ export function locateShard(library, id) {
  * LD-ARC-002. This module never writes INDEX.json.
  *
  * @param {ShardLibrary} library                       Library handle from loadLibraries.
- * @param {string} id                                  Shard ID (e.g. "TASK-001").
+ * @param {string} id                                  Shard ID (e.g. "TASK-001"). Must match /^[A-Z][A-Z0-9_]*-\d+$/.
  * @param {(shard: object) => object} mutator          Pure function returning the new shard.
  * @returns {object}                                   The written shard.
  * @throws {ShardNotFoundError}    Shard file does not exist.
  * @throws {ShardValidationError}  Mutator returned an invalid shape, or file contained invalid JSON.
- * @throws {ShardLibraryError}     Read/write/rename failure.
+ * @throws {ShardLibraryError}     Read/write/rename failure, or id fails the safe-id regex
+ *                                 (path-traversal guard, raised before any FS access).
  */
 export function updateShard(library, id, mutator) {
-  // 1. Locate
+  // 1. Locate (locateShard validates id via validateShardId — guard runs before any FS access)
   const target = locateShard(library, id);
   if (target === null) {
     throw new ShardNotFoundError(
@@ -219,6 +224,24 @@ export function updateShard(library, id, mutator) {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+// Safe-id regex: uppercase prefix + optional [A-Z0-9_], single hyphen, then digits.
+// Matches "TASK-001", "ISSUE-042", "BUG_FIX-7". Rejects "../foo", "task-1" (lowercase),
+// "TASK001" (no hyphen), "TASK-1.json" (extension), "TASK-1/x" (separator).
+// Anchors + restricted character class together prevent path traversal and absolute paths.
+const SAFE_SHARD_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
+
+function validateShardId(id) {
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new ShardLibraryError('shard id must be a non-empty string');
+  }
+  if (!SAFE_SHARD_ID.test(id)) {
+    throw new ShardLibraryError(
+      `shard id "${id}" is not safe — must match ${SAFE_SHARD_ID} ` +
+      `(uppercase prefix, hyphen, digits; e.g. "TASK-001")`
+    );
+  }
+}
 
 function _normalizeLibrary(entry, configDir, indexHint) {
   if (!entry || typeof entry !== 'object') {
