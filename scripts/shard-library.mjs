@@ -64,15 +64,17 @@ export class ShardValidationError extends ShardLibraryError {
 
 const _cache = new Map(); // absoluteConfigPath -> ShardLibrary[]
 let _statusVocabCache = new WeakMap(); // ShardLibrary -> { start, done }
+let _prefixCache = new WeakMap(); // ShardLibrary -> string|null (sampled ID prefix)
 
 /**
- * Test-only: clear the loadLibraries cache and the resolveStatusVocab cache.
- * Do not call from production code.
+ * Test-only: clear the loadLibraries cache, the resolveStatusVocab cache,
+ * and the prefix cache (used by scanLinks). Do not call from production code.
  * @returns {void}
  */
 export function __resetCache() {
   _cache.clear();
   _statusVocabCache = new WeakMap();
+  _prefixCache = new WeakMap();
 }
 
 function debugWarn(...args) {
@@ -551,4 +553,215 @@ function _matchOne(enumVals, regex, role, libId, schemaPath) {
     `${matches.length} enum values matched ${regex} → ${JSON.stringify(matches)} ` +
     `(enum: ${enumStr}). ${remediation}`
   );
+}
+
+// ---------------------------------------------------------------------------
+// Cross-library link scanning (scanLinks) — PLAN §3c
+// ---------------------------------------------------------------------------
+
+const LINK_ID_RE      = /^[A-Z][A-Z0-9_]*-\d+$/i;
+const LINK_KEYWORD_RE = /\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?)\s+([A-Z][A-Z0-9_]*-\d+)/gi;
+const SHARD_FILE_RE   = /^([A-Z][A-Z0-9_]*)-\d+\.json$/;
+
+/**
+ * Scan a task shard for links to other libraries.
+ *
+ * Two link sources are unioned and deduped:
+ *   1. Explicit  — taskShard[library.linkField] (string OR string[]); skipped
+ *                  when linkField is null/undefined or the field is absent.
+ *   2. Keyword   — regex over (description ?? '') + '\n' + (notes ?? '')
+ *                  matching /\b(fix(es|ed)?|close[sd]?|resolve[sd]?)\s+ID/gi.
+ *
+ * Each candidate ID is uppercased then routed to a library by matching its
+ * leading prefix (chars before the dash) against the prefix sampled from
+ * each library's existing shards. Unknown prefixes are dropped with an
+ * actionable console.warn (LD-PAT-007). The current task's own ID is always
+ * excluded.
+ *
+ * Pure & sync. Performs at most one fs.readdirSync per library per process
+ * (cached in _prefixCache). No top-level I/O (LD-PAT-001 / LD-BUG-010).
+ *
+ * @param {object}          taskShard    Loaded task shard JSON. Must have a
+ *                                       string `id`; all other fields optional.
+ * @param {ShardLibrary[]}  allLibraries Output of loadLibraries(); scanned in order.
+ * @returns {Map<string, Set<string>>}   libraryId -> Set of linked shard IDs.
+ *                                       Libraries with zero hits are omitted.
+ *                                       Empty Map when nothing is linked.
+ * @throws {ShardLibraryError}           taskShard is not an object, or
+ *                                       taskShard.id is missing/invalid, or
+ *                                       allLibraries is not an array.
+ */
+export function scanLinks(taskShard, allLibraries) {
+  if (!taskShard || typeof taskShard !== 'object') {
+    throw new ShardLibraryError('scanLinks: taskShard must be an object');
+  }
+  if (typeof taskShard.id !== 'string' || taskShard.id.length === 0) {
+    throw new ShardLibraryError('scanLinks: taskShard.id must be a non-empty string');
+  }
+  if (!Array.isArray(allLibraries)) {
+    throw new ShardLibraryError('scanLinks: allLibraries must be an array');
+  }
+
+  const result = new Map();
+  if (allLibraries.length === 0) return result;
+
+  const selfId = taskShard.id.toUpperCase();
+  const prefixIndex = _buildPrefixIndex(allLibraries);
+  const ownerId = String(taskShard.id ?? '');
+  const selfPrefixMatch = ownerId.match(/^([A-Z][A-Z0-9_]*)-\d+$/i);
+  const selfPrefix = selfPrefixMatch ? selfPrefixMatch[1].toUpperCase() : null;
+
+  // 1. Explicit pass — for each library with a linkField, read taskShard[linkField].
+  //    Always routes to that owning library regardless of ID prefix.
+  for (const library of allLibraries) {
+    if (!library || typeof library.linkField !== 'string' || library.linkField.length === 0) {
+      continue;
+    }
+    const explicit = _collectExplicit(taskShard, library);
+    for (const id of explicit) {
+      if (id === selfId) continue;
+      _addLink(result, library.id, id);
+    }
+  }
+
+  // 2. Keyword pass — scan description + notes; route by sampled prefix.
+  const keywordIds = _collectKeywords(taskShard);
+  for (const id of keywordIds) {
+    if (id === selfId) continue;
+    const prefixMatch = id.match(/^([A-Z][A-Z0-9_]*)-\d+$/);
+    if (!prefixMatch) continue;
+    const prefix = prefixMatch[1];
+    const library = prefixIndex.get(prefix);
+    if (!library) {
+      // Self-prefix that didn't match a routable library → silent (self-ref handled above too).
+      if (selfPrefix && prefix === selfPrefix) continue;
+      console.warn(
+        `[shard-library] scanLinks: unknown ID prefix '${prefix}' in '${id}' ` +
+        `(task ${taskShard.id}); no library's shards start with '${prefix}-'. ` +
+        `Add a library with matching shards or remove the reference.`
+      );
+      continue;
+    }
+    _addLink(result, library.id, id);
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// scanLinks helpers
+// ---------------------------------------------------------------------------
+
+function _resolveLibraryPrefix(library) {
+  if (!library || typeof library !== 'object') return null;
+  if (_prefixCache.has(library)) return _prefixCache.get(library);
+
+  let prefix = null;
+  const dir = library.shardDir;
+  if (typeof dir === 'string' && dir.length > 0) {
+    let entries = null;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch (e) {
+      debugWarn(`scanLinks: cannot read shardDir for library '${library.id}' (${dir}): ${e.message}`);
+    }
+    if (Array.isArray(entries)) {
+      const matches = entries
+        .filter((name) => SHARD_FILE_RE.test(name))
+        .sort();
+      if (matches.length > 0) {
+        const m = matches[0].match(SHARD_FILE_RE);
+        if (m) prefix = m[1];
+      } else {
+        debugWarn(`scanLinks: no shard files found under '${dir}' for library '${library.id}'; prefix unresolved`);
+      }
+    }
+  }
+  _prefixCache.set(library, prefix);
+  if (prefix) debugWarn(`scanLinks: prefix for library '${library.id}' = '${prefix}'`);
+  return prefix;
+}
+
+function _buildPrefixIndex(allLibraries) {
+  const index = new Map();
+  for (const library of allLibraries) {
+    const prefix = _resolveLibraryPrefix(library);
+    if (!prefix) continue;
+    if (index.has(prefix)) {
+      const winner = index.get(prefix);
+      console.warn(
+        `[shard-library] scanLinks: prefix '${prefix}' claimed by both libraries ` +
+        `'${winner.id}' and '${library.id}'; routing to '${winner.id}' (first declared in shardLibraries[]).`
+      );
+      continue;
+    }
+    index.set(prefix, library);
+  }
+  return index;
+}
+
+function _collectExplicit(taskShard, library) {
+  const out = new Set();
+  const field = library.linkField;
+  const value = taskShard[field];
+  if (value === undefined || value === null) return out;
+
+  let items;
+  if (Array.isArray(value)) {
+    items = value;
+  } else if (typeof value === 'string') {
+    items = [value];
+  } else {
+    console.warn(
+      `[shard-library] scanLinks: field '${field}' on task ${taskShard.id} is ` +
+      `${typeof value} (expected string or string[]); skipping. ` +
+      `Set '${field}' to an array of shard IDs (e.g. ["ISSUE-001"]).`
+    );
+    return out;
+  }
+
+  for (const entry of items) {
+    if (typeof entry !== 'string') {
+      console.warn(
+        `[shard-library] scanLinks: non-string entry in '${field}' on task ${taskShard.id}: ` +
+        `${JSON.stringify(entry)}; skipping. Each entry must be a shard ID string.`
+      );
+      continue;
+    }
+    const trimmed = entry.trim();
+    if (trimmed.length === 0) continue;
+    if (!LINK_ID_RE.test(trimmed)) {
+      console.warn(
+        `[shard-library] scanLinks: invalid shard ID '${trimmed}' in '${field}' on task ${taskShard.id}; ` +
+        `expected pattern PREFIX-NNN (e.g. ISSUE-001). Skipping.`
+      );
+      continue;
+    }
+    out.add(trimmed.toUpperCase());
+  }
+  return out;
+}
+
+function _collectKeywords(taskShard) {
+  const desc = typeof taskShard.description === 'string' ? taskShard.description : '';
+  const notes = typeof taskShard.notes === 'string' ? taskShard.notes : '';
+  const text = desc + '\n' + notes;
+  const ids = [];
+  if (text.length === 0) return ids;
+  // Reset lastIndex defensively (regex is module-scoped + /g).
+  LINK_KEYWORD_RE.lastIndex = 0;
+  let m;
+  while ((m = LINK_KEYWORD_RE.exec(text)) !== null) {
+    ids.push(m[1].toUpperCase());
+  }
+  return ids;
+}
+
+function _addLink(map, libId, id) {
+  let set = map.get(libId);
+  if (!set) {
+    set = new Set();
+    map.set(libId, set);
+  }
+  set.add(id);
 }
