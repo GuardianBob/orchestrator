@@ -1,5 +1,12 @@
 # STATUS_SUMMARY
 
+## Sprint 1 — Complete (2026-05-01)
+
+- Shipped pure, side-effect-free `scripts/shard-library.mjs` (10 exports, 6 PLAN-mandated public APIs: `loadLibraries`, `locateShard`, `updateShard`, `rebuildLibrary`, `resolveStatusVocab`, `scanLinks`) plus typed error hierarchy (`ShardLibraryError` → `ShardNotFoundError`/`ShardValidationError`).
+- Migrated `load-config.mjs` and `resolve-tasks.mjs` to consume `cfg.shardLibraries[]` with backward-compat synthesis from legacy `tasksSource.primary`.
+- Hardened path-traversal defense: `validateShardId` regex guard applied transitively to every shard-path construction.
+- 80 vitest tests passing (63 unit + 17 integration), with ≥90% per-file coverage threshold on `shard-library.mjs` (~98% achieved); JSON-schema-validated fixtures for `.tasks/` and `.issues/`.
+- Write-side integrations (`branch-setup`, `merge-task`) and live acceptance against `issues-plugin` deferred to sprint-2/3 — the 3 unused exports (`rebuildLibrary`, `resolveStatusVocab`, `scanLinks`) are wired-in for those consumers.
 
 - [2026-05-01] Completed task-001: Bootstrap test infrastructure (vitest)
 
