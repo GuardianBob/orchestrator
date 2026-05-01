@@ -258,7 +258,7 @@ const ISO_2026 = '2026-01-01T00:00:00.000Z';
 // test that wants to drive the prompt loop — Node provides no API to fake a
 // TTY on a pipe, so the script honors this env var as a test-only escape
 // hatch (documented in scripts/branch-setup.mjs handleCollisionAtStart).
-const TTY_ENV = { BRANCH_SETUP_FORCE_INTERACTIVE: '1' };
+const TTY_ENV = { BRANCH_SETUP_TEST_FORCE_INTERACTIVE: '1' };
 
 function backlogShard(id = 'TASK-009') {
   return {
@@ -579,5 +579,115 @@ describe('branch-setup integration — restart write failure', () => {
     const env = parseEnvelope(stdout);
     expect(env.statusFlip.reason).toMatch(/^restart-io-error:/);
     expect(env.statusFlip.choice).toBe('restart');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-026 — vocab-error envelope discrimination + hard validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Overwrite the schema in a fixture repo with a custom enum, then commit so
+ * the working tree stays clean (branch-setup's dirty-tree guard would exit 2).
+ */
+function rewriteSchemaEnum(repoDir, enumValues) {
+  const schemaTarget = path.join(repoDir, '.tasks', 'schemas', 'task.schema.json');
+  const schema = JSON.parse(fs.readFileSync(schemaTarget, 'utf8'));
+  schema.properties.status.enum = enumValues;
+  fs.writeFileSync(schemaTarget, JSON.stringify(schema, null, 2));
+  execSync('git add -A && git commit -q -m rewrite-schema', { cwd: repoDir });
+}
+
+describe('branch-setup integration — vocab-error envelope (TASK-026)', () => {
+  let repo;
+  afterEach(() => { rmDir(repo?.dir); repo = null; });
+
+  it('#15 ambiguous start vocab → exit 6 with vocab-error: envelope', async () => {
+    // Two enum values both match START_RE (/^(in[-_]?progress|active|...)$/i).
+    repo = setupTmpRepo({ shards: { 'TASK-009': backlogShard('TASK-009') } });
+    rewriteSchemaEnum(repo.dir, ['backlog', 'in-progress', 'active', 'done']);
+
+    const { stdout, stderr, exitCode } = await runBranchSetup(
+      ['--sprint', '9', '--task', '9', '--slug', 'demo'],
+      { cwd: repo.dir },
+    );
+    expect(exitCode).toBe(6);
+    const env = parseEnvelope(stdout);
+    expect(env.statusFlip.flipped).toBe(false);
+    expect(env.statusFlip.reason).toBe('vocab-error:ambiguous-start');
+    expect(stderr).toMatch(/vocab error/);
+
+    // Branch still exists (flip is best-effort; branch creation already happened).
+    const branches = execSync('git branch --list', { cwd: repo.dir, encoding: 'utf8' });
+    expect(branches).toContain('sprint-9-task-9-demo');
+
+    // Shard untouched.
+    const after = readJson(repo.primaryShardPath('TASK-009'));
+    expect(after.status).toBe('backlog');
+  });
+
+  it('#16 partial statusMap → exit 6 with vocab-error:statusmap-partial envelope', async () => {
+    repo = setupTmpRepo({
+      shards: { 'TASK-009': backlogShard('TASK-009') },
+      configOverrides: {
+        shardLibraries: [
+          {
+            id: 'tasks',
+            indexPath: path.join('.tasks', 'INDEX.json'),
+            shardDir: path.join('.tasks', 'tasks'),
+            schemaPath: path.join('.tasks', 'schemas', 'task.schema.json'),
+            rebuildCmd: 'echo rebuild',
+            primary: true,
+            statusMap: { start: 'doing' }, // missing 'done' → partial
+          },
+        ],
+      },
+    });
+
+    const { stdout, exitCode } = await runBranchSetup(
+      ['--sprint', '9', '--task', '9', '--slug', 'demo'],
+      { cwd: repo.dir },
+    );
+    expect(exitCode).toBe(6);
+    const env = parseEnvelope(stdout);
+    expect(env.statusFlip.reason).toBe('vocab-error:statusmap-partial');
+    expect(env.statusFlip.flipped).toBe(false);
+  });
+
+  it('#17 no-match start vocab → exit 6 with vocab-error:no-match-start envelope', async () => {
+    repo = setupTmpRepo({ shards: { 'TASK-009': backlogShard('TASK-009') } });
+    rewriteSchemaEnum(repo.dir, ['new', 'queued', 'done']);
+
+    const { stdout, exitCode } = await runBranchSetup(
+      ['--sprint', '9', '--task', '9', '--slug', 'demo'],
+      { cwd: repo.dir },
+    );
+    expect(exitCode).toBe(6);
+    const env = parseEnvelope(stdout);
+    expect(env.statusFlip.reason).toBe('vocab-error:no-match-start');
+  });
+});
+
+describe('branch-setup integration — backdoor namespace (TASK-026)', () => {
+  let repo;
+  afterEach(() => { rmDir(repo?.dir); repo = null; });
+
+  it('#18 NODE_ENV=production gates the test backdoor → non-TTY behaves non-interactive', async () => {
+    // With NODE_ENV=production, the BRANCH_SETUP_TEST_FORCE_INTERACTIVE escape
+    // hatch is inert. A non-TTY stdin therefore reaches abandon (exit 4)
+    // without driving the prompt loop.
+    repo = setupTmpRepo({ shards: { 'TASK-009': inProgressShard('TASK-009') } });
+
+    const { stdout, exitCode } = await runBranchSetup(
+      ['--sprint', '9', '--task', '9', '--slug', 'demo'],
+      {
+        cwd: repo.dir,
+        stdin: 'r\n', // would resume if backdoor were active
+        env: { ...TTY_ENV, NODE_ENV: 'production' },
+      },
+    );
+    expect(exitCode).toBe(4);
+    const env = parseEnvelope(stdout);
+    expect(env.statusFlip.choice).toBe('abandon');
   });
 });
