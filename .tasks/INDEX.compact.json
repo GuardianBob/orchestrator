@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-01T22:06:48.584Z",
+  "updated": "2026-05-01T22:36:28.000Z",
   "next_task_id": "TASK-026",
   "counts": {
     "total": 25,
-    "backlog": 25,
+    "backlog": 24,
     "ready": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 0,
@@ -17,7 +17,11 @@
     "archived": 0
   },
   "previous_task": null,
-  "current_task": null,
+  "current_task": {
+    "id": "TASK-010",
+    "title": "Implement collision prompt (resume / restart / abandon)",
+    "status": "in-progress"
+  },
   "next_task": {
     "id": "TASK-001",
     "title": "Bootstrap test infrastructure (vitest)",

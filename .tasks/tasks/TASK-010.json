@@ -13,11 +13,12 @@
     "Non-interactive run defaults to abandon with code 4",
     "Restart appends notes entry without overwriting prior notes"
   ],
-  "status": "backlog",
+  "status": "in-progress",
   "created": "2026-05-01T19:10:37.086Z",
-  "updated": "2026-05-01T19:10:55.300Z",
+  "updated": "2026-05-01T22:36:22.597Z",
   "id": "TASK-010",
   "depends_on": [
     "TASK-009"
-  ]
+  ],
+  "started": "2026-05-01T22:36:22.597Z"
 }
