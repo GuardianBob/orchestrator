@@ -1,9 +1,18 @@
 #!/usr/bin/env node
 // resolve-tasks.mjs <target>  OR  resolve-tasks.mjs --target <target>
 // target = task-id | sprint-N | phase-N | count:N | <number> | next | <fuzzy title>
+//
+// Loads tasks from (in order):
+//   1. cfg.shardLibraries[] — gen-tasklist style INDEX.json + per-id JSON shards
+//      (consumed in config array order; primary should be first by convention).
+//   2. cfg.tasksSource.primary — markdown task list (skipped if equal to any
+//      lib.indexPath already consumed).
+//   3. cfg.tasksSource.phasePattern matches in cwd — markdown phase plans.
+//   4. github fallback (only if nothing else produced tasks).
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { ShardLibraryError, loadLibraries } from './shard-library.mjs';
 
 const argv = process.argv.slice(2);
 const flagIdx = argv.indexOf('--target');
@@ -12,7 +21,10 @@ if (flagIdx !== -1 && argv[flagIdx + 1]) target = argv[flagIdx + 1];
 else target = argv.find(a => !a.startsWith('--')) || 'next';
 target = target.trim();
 const cwd = process.cwd();
-const cfg = JSON.parse(fs.readFileSync(path.join(cwd, '.orchestrator.json'), 'utf8'));
+const cfgPath = path.join(cwd, '.orchestrator.json');
+const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+// Attach shardLibraries the same way load-config.mjs does — single source of truth.
+cfg.shardLibraries = loadLibraries(cfgPath);
 
 function slugify(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
@@ -43,8 +55,8 @@ function parseMarkdownTasks(file, defaultSprintId) {
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
   const out = [];
   let currentSprint = defaultSprintId;
-  let currentSprintRangeEnd = null; // for "Sprint 3–6" — tasks inherit primary id but range is recorded
-  let pending = null; // accumulating-body state for heading-style tasks
+  let currentSprintRangeEnd = null;
+  let pending = null;
 
   function flushPending() {
     if (!pending) return;
@@ -55,7 +67,6 @@ function parseMarkdownTasks(file, defaultSprintId) {
   }
 
   for (const line of lines) {
-    // Sprint header → flush, switch context, continue
     const sh = line.match(SPRINT_HEADER_RE);
     if (sh) {
       flushPending();
@@ -64,7 +75,6 @@ function parseMarkdownTasks(file, defaultSprintId) {
       continue;
     }
 
-    // Heading-style task (### task-NNN — title)
     const th = line.match(TASK_HEADING_RE) || line.match(JIRA_HEADING_RE);
     if (th) {
       flushPending();
@@ -73,7 +83,6 @@ function parseMarkdownTasks(file, defaultSprintId) {
       const isStrikethrough = /^#{2,6}\s+~~/.test(line);
       const isDoneMarker = DONE_MARKERS_RE.test(rawTitle);
       if (isStrikethrough || isDoneMarker) {
-        // Skip done tasks but don't open a pending block
         pending = null;
         continue;
       }
@@ -90,19 +99,15 @@ function parseMarkdownTasks(file, defaultSprintId) {
       continue;
     }
 
-    // Horizontal rule or new top-level section → close pending body
     if (pending) {
       if (/^---+\s*$/.test(line) || /^#{1,2}\s+/.test(line)) {
         flushPending();
-        // Don't `continue` — let the line still be evaluated (e.g. ## Sprint headers
-        // already returned above; remaining headings just terminate the pending body)
       } else {
         pending.bodyLines.push(line);
         continue;
       }
     }
 
-    // Checkbox-style task (legacy)
     const cb = line.match(CHECKBOX_TASK_RE);
     if (cb) {
       const done = cb[1].toLowerCase() === 'x';
@@ -129,15 +134,98 @@ function detectSprintFromFile(file) {
   return m ? m[1] : '1';
 }
 
+// gen-tasklist style: INDEX.json with `open_tasks[]`, sibling shard files at
+// `<library.shardDir>/<id>.json`. Sprint membership encoded as `sprint-N` tag.
+// `source` field is set to `library.id` (unique by validation contract).
+function parseShardLibrary(lib) {
+  const out = [];
+  let idx;
+  try { idx = JSON.parse(fs.readFileSync(lib.indexPath, 'utf8')); }
+  catch (e) {
+    console.error(`[resolve-tasks] WARN: failed to read/parse ${lib.indexPath}: ${e.message}. Library '${lib.id}' will contribute zero tasks.`);
+    return out;
+  }
+  if (!idx || !Array.isArray(idx.open_tasks)) return out;
+  const shardsDir = lib.shardDir;
+  const DONE_STATUSES = new Set(['done', 'completed', 'archived', 'cancelled', 'closed']);
+  for (const row of idx.open_tasks) {
+    if (!row || !row.id) continue;
+    if (DONE_STATUSES.has(String(row.status || '').toLowerCase())) continue;
+    const sprintTag = (row.tags || []).find(t => /^sprint-\d+$/i.test(t));
+    const sprintId = sprintTag ? sprintTag.replace(/[^\d]/g, '') : '1';
+    const shardPath = path.join(shardsDir, `${row.id}.json`);
+    let shard = null;
+    if (fs.existsSync(shardPath)) {
+      try { shard = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
+      catch (e) {
+        console.error(`[resolve-tasks] WARN: failed to parse shard ${shardPath}: ${e.message}. Falling back to INDEX summary (no description, no acceptance criteria).`);
+      }
+    } else {
+      console.error(`[resolve-tasks] WARN: shard ${shardPath} is missing; ${row.id} will dispatch with title-only body (no description, no acceptance criteria). Run \`npx tasklist-rebuild\` to repair.`);
+    }
+    const title = (shard && shard.title) || row.title || row.id;
+    const bodyParts = [`# ${row.id}: ${title}`, ''];
+    if (shard?.priority) bodyParts.push(`**Priority:** ${shard.priority}  **Effort:** ${shard.effort || '?'}`);
+    if (shard?.tags?.length) bodyParts.push(`**Tags:** ${shard.tags.join(', ')}`);
+    if (shard?.depends_on?.length) bodyParts.push(`**Depends on:** ${shard.depends_on.join(', ')}`);
+    if (shard?.description) { bodyParts.push('', '## Description', '', shard.description); }
+    if (shard?.acceptance_criteria?.length) {
+      bodyParts.push('', '## Acceptance Criteria', '');
+      for (const ac of shard.acceptance_criteria) bodyParts.push(`- ${ac}`);
+    }
+    out.push({
+      id: row.id,
+      slug: slugify(title),
+      title,
+      source: lib.id,
+      sprintId,
+      sprintRangeEnd: null,
+      body: bodyParts.join('\n').trim(),
+    });
+  }
+  return out;
+}
+
 function loadAllTasks() {
   const tasks = [];
-  const primary = path.join(cwd, cfg.tasksSource?.primary || 'TASKLIST.md');
-  if (fs.existsSync(primary)) tasks.push(...parseMarkdownTasks(primary, '1'));
+  const consumedIndexPaths = new Set();
+
+  // 1. Sharded libraries — primary-count validation (LD-PAT-007)
+  const primaries = cfg.shardLibraries.filter(l => l.primary === true);
+  if (primaries.length === 0) {
+    throw new ShardLibraryError(
+      'resolve-tasks: no shardLibraries entry has primary:true. ' +
+      'Mark exactly one library as primary in .orchestrator.json.'
+    );
+  }
+  if (primaries.length > 1) {
+    throw new ShardLibraryError(
+      `resolve-tasks: multiple primary libraries: ${primaries.map(l => l.id).join(', ')}. ` +
+      'Exactly one library must have primary:true.'
+    );
+  }
+
+  for (const lib of cfg.shardLibraries) {
+    if (fs.existsSync(lib.indexPath)) {
+      tasks.push(...parseShardLibrary(lib));
+    }
+    consumedIndexPaths.add(path.resolve(lib.indexPath));
+  }
+
+  // 2. Markdown primary (dedup against any shard library indexPath)
+  const primary = path.resolve(cwd, cfg.tasksSource?.primary || 'TASKLIST.md');
+  if (!consumedIndexPaths.has(primary) && fs.existsSync(primary)) {
+    tasks.push(...parseMarkdownTasks(primary, '1'));
+  }
+
+  // 3. Phase-pattern files
   const phasePattern = cfg.tasksSource?.phasePattern || 'PHASE_*_PLAN.md';
   const re = new RegExp('^' + phasePattern.replace(/\*/g, '.*').replace(/\./g, '\\.') + '$');
   for (const f of fs.readdirSync(cwd)) {
     if (re.test(f)) tasks.push(...parseMarkdownTasks(path.join(cwd, f), detectSprintFromFile(f)));
   }
+
+  // 4. GitHub fallback
   if (tasks.length === 0 && cfg.tasksSource?.fallback === 'github') {
     try {
       const json = execSync('gh issue list --state open --json number,title,labels --limit 100', { encoding: 'utf8' });
@@ -164,8 +252,6 @@ const mJira = target.match(/^([A-Z]+-\d+)$/);
 const mPlainNum = target.match(/^(\d+)$/);
 
 if (mReviewSprint) {
-  // Non-task target: orchestrator skill handles via review-sprint.mjs.
-  // Return empty queue + signal so the caller doesn't try to dispatch builders.
   queue = [];
   resolution = 'review-sprint';
   console.log(JSON.stringify({
@@ -200,7 +286,6 @@ if (target === 'next') {
   const t = all.find(x => x.id === mJira[1]);
   if (t) { queue = [t]; resolution = 'jira-id'; }
 } else if (mPlainNum) {
-  // bare number: try as task ID first, then as count
   const t = all.find(x => x.id === mPlainNum[1]);
   if (t) { queue = [t]; resolution = 'task-id'; }
   else { queue = all.slice(0, parseInt(mPlainNum[1], 10)); resolution = 'count'; }

@@ -1,0 +1,277 @@
+{
+  "target": "sprint-1",
+  "resolution": "sprint",
+  "totalAvailable": 44,
+  "queue": [
+    {
+      "id": "TASK-001",
+      "slug": "bootstrap-test-infrastructure-vitest",
+      "title": "Bootstrap test infrastructure (vitest)",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-001: Bootstrap test infrastructure (vitest)\n\n**Priority:** high  **Effort:** S\n**Tags:** foundation, sprint-shard-a, testing\n\n## Description\n\nAdd `vitest` as a devDependency. Create `vitest.config.mjs` with `testMatch: [\"tests/**/*.test.mjs\"]`, coverage thresholds `scripts/ >= 80%`, `lib/ >= 90%` (when `lib/` exists). Add npm scripts: `test`, `test:watch`, `test:coverage`. Update `package.json` `engines.node >= 20`. Verify `npx vitest run` exits 0 on empty test set.\n\n## Acceptance Criteria\n\n- `npx vitest run` exits 0 (no tests yet, no failure)\n- `npm test` is wired to `vitest run`\n- `package.json` engines.node is `>=20`\n- `vitest.config.mjs` is valid ESM (no CJS require)"
+    },
+    {
+      "id": "TASK-002",
+      "slug": "create-test-fixtures-for-tasks-and-issue",
+      "title": "Create test fixtures for `.tasks/` and `.issues/`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-002: Create test fixtures for `.tasks/` and `.issues/`\n\n**Priority:** high  **Effort:** S\n**Tags:** foundation, sprint-shard-a, testing\n**Depends on:** TASK-001\n\n## Description\n\nCreate `tests/fixtures/tasks-fixture/.tasks/` with: `INDEX.json` (3 sample tasks: backlog, in-progress, done), `tasks/TASK-001.json` through `TASK-003.json`, `schemas/task.schema.json` copied verbatim from `gen-tasklist`, `config.json`. Mirror under `tests/fixtures/issues-fixture/.issues/` with issue vocabulary (`open` / `in-progress` / `resolved`) and a sample issue. Document fixture provenance in `tests/fixtures/README.md`.\n\n## Acceptance Criteria\n\n- Both fixture directories validate against their respective schemas via ajv\n- Fixture schemas are byte-identical to upstream gen-tasklist + gen-issues source (provenance noted)\n- README documents how to refresh fixtures from upstream"
+    },
+    {
+      "id": "TASK-003",
+      "slug": "implement-shard-library-mjs-core-loadlib",
+      "title": "Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-003: Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`\n\n**Priority:** high  **Effort:** M\n**Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-001\n\n## Description\n\nCreate `scripts/shard-library.mjs`. Implement three of six public APIs per PLAN.md §3a: `loadLibraries(configPath)` (parses `shardLibraries[]`, synthesizes from legacy `tasksSource.primary` if absent, validates shape), `locateShard(library, id)` (returns absolute path or null), `updateShard(library, id, mutator)` (atomic `.tmp + rename` write, throws on missing file or mutator returning invalid shape). All exports use JSDoc with `@param`/`@returns`. No side effects on import.\n\n## Acceptance Criteria\n\n- All three functions exported and callable\n- `loadLibraries` synthesizes legacy config + emits debug warning naming the assumed defaults\n- `updateShard` is atomic — write failure leaves original file intact\n- Module has no top-level side effects (importable in tests safely)"
+    },
+    {
+      "id": "TASK-004",
+      "slug": "implement-shard-library-mjs-rebuild-stat",
+      "title": "Implement `shard-library.mjs` rebuild + status inference",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-004: Implement `shard-library.mjs` rebuild + status inference\n\n**Priority:** high  **Effort:** M\n**Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-003\n\n## Description\n\nAdd `rebuildLibrary(library)` (execSync with `library.rebuildCmd`, captures stderr, returns `{ ok, reason }` — never throws — emits actionable warning on non-zero exit suggesting install command). Add `resolveStatusVocab(library)` per PLAN.md §3b: if `library.statusMap` set → use it; else load schema, extract `status` enum, apply heuristic regex (`/^(in[-_]?progress|active|started|wip)$/i` for start, `/^(done|completed?|closed|resolved|fixed)$/i` for done); require exactly one match per role; throw actionable error otherwise. Cache result per library on first call.\n\n## Acceptance Criteria\n\n- `rebuildLibrary` never throws — returns `{ ok: false, reason }` on missing CLI\n- `resolveStatusVocab` returns `{ start: \"in-progress\", done: \"done\" }` for gen-tasklist schema\n- `resolveStatusVocab` returns `{ start: \"in-progress\", done: \"resolved\" }` for gen-issues schema\n- Throws with actionable message when 0 or >1 enum matches a role\n- Per-library cache survives multiple calls in same process"
+    },
+    {
+      "id": "TASK-005",
+      "slug": "implement-shard-library-mjs-link-scanner",
+      "title": "Implement `shard-library.mjs` link scanner",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-005: Implement `shard-library.mjs` link scanner\n\n**Priority:** high  **Effort:** S\n**Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-003\n\n## Description\n\nAdd `scanLinks(taskShard, allLibraries)` per PLAN.md §3c. Extract IDs from `taskShard[library.linkField]` (when defined) AND from keyword regex `/\\b(fix(?:es|ed)?|close[sd]?|resolve[sd]?)\\s+(ISSUE|TASK|BUG|FEAT)-\\d+/gi` over `description + notes`. Return `Map<libraryId, Set<shardId>>`. Match ID prefix against each library's shard naming convention (e.g., `ISSUE-NNN` belongs to library whose shards match that prefix). Skip + log unknown prefixes.\n\n## Acceptance Criteria\n\n- Returns empty map when no links found\n- Detects explicit `resolves: [\"ISSUE-042\"]` field correctly\n- Detects keyword phrases case-insensitively across description + notes\n- Unknown ID prefix (e.g., `FOO-001`) is skipped + logged at warn level\n- Union of explicit + keyword sources deduplicates"
+    },
+    {
+      "id": "TASK-006",
+      "slug": "unit-tests-for-shard-library-mjs-all-6-a",
+      "title": "Unit tests for `shard-library.mjs` (all 6 APIs)",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-006: Unit tests for `shard-library.mjs` (all 6 APIs)\n\n**Priority:** high  **Effort:** M\n**Tags:** testing, sprint-shard-a\n**Depends on:** TASK-002, TASK-003, TASK-004, TASK-005\n\n## Description\n\nCreate `tests/shard-library.test.mjs`. Cover every public API: `loadLibraries` (legacy synth, multi-library, malformed), `locateShard` (found, missing, wrong dir), `updateShard` (atomic write, mutator returning invalid shape, file-not-found), `rebuildLibrary` (success path mocked, failure path with non-zero exit), `resolveStatusVocab` (gen-tasklist, gen-issues, ambiguous enum, missing schema, statusMap override), `scanLinks` (explicit field, keyword scan, union, unknown prefix). Aim for ≥90% coverage on the helper module.\n\n## Acceptance Criteria\n\n- `npx vitest run tests/shard-library.test.mjs` exits 0\n- Coverage report shows ≥90% lines + branches for `scripts/shard-library.mjs`\n- Every error path has a negative test\n- Tests use fixtures from TASK-002, no external network"
+    },
+    {
+      "id": "TASK-007",
+      "slug": "update-load-config-mjs-to-expose-shardli",
+      "title": "Update `load-config.mjs` to expose `shardLibraries`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-007: Update `load-config.mjs` to expose `shardLibraries`\n\n**Priority:** high  **Effort:** S\n**Tags:** integration, sprint-shard-a\n**Depends on:** TASK-003\n\n## Description\n\nModify `scripts/load-config.mjs`. After existing config load, call `loadLibraries(configPath)` from `shard-library.mjs` and attach result as `config.shardLibraries`. Preserve legacy `config.tasksSource` for any other consumer that may read it. Document the new field in inline comments.\n\n## Acceptance Criteria\n\n- Existing callers of `load-config.mjs` see no change in legacy fields\n- `config.shardLibraries` is always an array (length ≥ 1) after load\n- A config with neither `shardLibraries` nor `tasksSource.primary` throws a clear error"
+    },
+    {
+      "id": "TASK-008",
+      "slug": "migrate-resolve-tasks-mjs-to-use-loadlib",
+      "title": "Migrate `resolve-tasks.mjs` to use `loadLibraries()`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-008: Migrate `resolve-tasks.mjs` to use `loadLibraries()`\n\n**Priority:** high  **Effort:** S\n**Tags:** integration, sprint-shard-a\n**Depends on:** TASK-007\n\n## Description\n\nModify `scripts/resolve-tasks.mjs`. Replace hardcoded `parseTasklistIndex` invocation with: find `library = config.shardLibraries.find(l => l.primary)`, read `library.indexPath`, iterate `open_tasks`, open shards from `library.shardDir/{id}.json`. Behavior is identical for default `.tasks/` config. Add regression test that resolves the same sprint as before and gets identical output.\n\n## Acceptance Criteria\n\n- `resolve-tasks.mjs sprint-4` against the issues-plugin produces byte-identical output to current behavior\n- Throws clear error if no library has `primary: true`\n- Throws clear error if multiple libraries have `primary: true`"
+    },
+    {
+      "id": "TASK-009",
+      "slug": "add-status-flip-to-branch-setup-mjs",
+      "title": "Add status flip to `branch-setup.mjs`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-009: Add status flip to `branch-setup.mjs`\n\n**Priority:** high  **Effort:** M\n**Tags:** integration, sprint-shard-b\n**Depends on:** TASK-006, TASK-008\n\n## Description\n\nModify `scripts/branch-setup.mjs`. After branch creation succeeds: locate primary-library shard via `locateShard`, read it, check status. If status is the inferred `done` value → exit non-zero with clear message. If status is the inferred `start` value → trigger collision prompt (TASK-010). Otherwise: call `updateShard` to set `status = start`, `started = now`, `updated = now`. Then call `rebuildLibrary` (resilient — Fix 3 already in helper).\n\n## Acceptance Criteria\n\n- New shard transitions backlog → in-progress with timestamps\n- Already-done shard exits with code 4 + clear message\n- Rebuild failure emits warning but doesn't block builder dispatch\n- Atomic write — interrupted run leaves shard either fully old or fully new, never partial"
+    },
+    {
+      "id": "TASK-010",
+      "slug": "implement-collision-prompt-resume-restar",
+      "title": "Implement collision prompt (resume / restart / abandon)",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-010: Implement collision prompt (resume / restart / abandon)\n\n**Priority:** high  **Effort:** S\n**Tags:** integration, sprint-shard-b\n**Depends on:** TASK-009\n\n## Description\n\nWhen `branch-setup.mjs` finds shard already at the inferred start status: invoke the existing `notify.mjs` + question-tool pattern (mirrors `review-sprint.mjs`). Three options per PLAN.md §3e: **resume** (preserve `started`, proceed), **restart** (overwrite `started`, append notes entry \"Restarted by orchestrator on <date>\"), **abandon** (exit non-zero, no dispatch). Non-interactive default = abandon (matches FEAT_FIXES.md hard-refuse fallback).\n\n## Acceptance Criteria\n\n- Prompt fires only when shard is at inferred start status (not other states)\n- All three options behave correctly (verified via integration test)\n- Non-interactive run defaults to abandon with code 4\n- Restart appends notes entry without overwriting prior notes"
+    },
+    {
+      "id": "TASK-011",
+      "slug": "integration-test-for-branch-setup-mjs",
+      "title": "Integration test for `branch-setup.mjs`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-011: Integration test for `branch-setup.mjs`\n\n**Priority:** high  **Effort:** S\n**Tags:** testing, sprint-shard-b\n**Depends on:** TASK-009, TASK-010\n\n## Description\n\nCreate `tests/integration/branch-setup.test.mjs`. Set up tmp git repo with `.tasks/` fixture. Run `branch-setup.mjs` against a backlog task → assert shard status, started timestamp, INDEX rebuild called. Run again with collision (manually flip shard to in-progress) → simulate user picking each of resume/restart/abandon → assert behavior. Run with rebuild CLI absent → assert warning but no failure.\n\n## Acceptance Criteria\n\n- All three collision branches verified\n- Rebuild-absence test passes (mock `npx tasklist-rebuild` to fail)\n- Test cleans up tmp git repo on completion (no test pollution)"
+    },
+    {
+      "id": "TASK-012",
+      "slug": "add-primary-shard-close-to-merge-task-mj",
+      "title": "Add primary-shard close to `merge-task.mjs`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-012: Add primary-shard close to `merge-task.mjs`\n\n**Priority:** high  **Effort:** M\n**Tags:** integration, sprint-shard-c\n**Depends on:** TASK-006, TASK-008\n\n## Description\n\nModify `scripts/merge-task.mjs`. After `git merge` succeeds (after current line ~53), before living-docs commit (before current line ~113): locate primary shard via `locateShard`, call `updateShard` to set `status = done`, `completed = now`, `updated = now`, append `notes` entry `[<YYYY-MM-DD>] Merged into <sprintBranch> at <mergeSha>`. Call `rebuildLibrary`.\n\n## Acceptance Criteria\n\n- Shard transitions in-progress → done with completed timestamp\n- Notes entry appends without overwriting existing notes\n- Rebuild failure emits warning but doesn't block subsequent steps\n- Runs only on successful merge (skip on merge conflict)"
+    },
+    {
+      "id": "TASK-013",
+      "slug": "add-cross-library-link-closing-to-merge-",
+      "title": "Add cross-library link closing to `merge-task.mjs`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-013: Add cross-library link closing to `merge-task.mjs`\n\n**Priority:** high  **Effort:** M\n**Tags:** integration, sprint-shard-c\n**Depends on:** TASK-012, TASK-005\n\n## Description\n\nAfter TASK-012's primary close: call `scanLinks(taskShard, config.shardLibraries)` to find all referenced linked-library shards. For each `(libraryId, shardId)` in the result map: validate the shard exists in the linked library's INDEX (skip + warn on unknown), call `updateShard` with mutator that sets the inferred done status, sets `completed = now`, appends `notes` entry `[<date>] Resolved by <taskId> @ <mergeSha>`. After all linked shards updated, call `rebuildLibrary` once per affected library.\n\n## Acceptance Criteria\n\n- Task with `Resolves ISSUE-042` keyword closes ISSUE-042\n- Task with explicit `resolves: [\"ISSUE-073\"]` closes ISSUE-073\n- Both sources combined dedupe correctly\n- Unknown linked ID logs warning but doesn't fail merge\n- Each linked library rebuilt at most once per merge (not once per shard)"
+    },
+    {
+      "id": "TASK-014",
+      "slug": "commit-tasks-and-issues-deltas-onto-spri",
+      "title": "Commit `.tasks/` and `.issues/` deltas onto sprint branch",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-014: Commit `.tasks/` and `.issues/` deltas onto sprint branch\n\n**Priority:** high  **Effort:** S\n**Tags:** integration, sprint-shard-c\n**Depends on:** TASK-013\n\n## Description\n\nAfter TASK-012 + TASK-013 mutations: stage all modified shard library directories (any `.{plugin}/` whose `library.indexPath` was touched). Commit with message `chore(orchestrator): close <taskId> + linked shards [<sha>]`. This is a separate commit on the sprint branch, after the merge commit, before the existing living-docs commit.\n\n## Acceptance Criteria\n\n- Single commit captures all shard + INDEX changes from both TASK-012 + TASK-013\n- Commit message includes task ID + merge SHA for traceability\n- No-op commit suppressed (e.g., when nothing changed because rebuild failed and shards are already correct)\n- Living-docs commit (existing behavior) still runs after"
+    },
+    {
+      "id": "TASK-015",
+      "slug": "integration-test-for-merge-task-mjs-with",
+      "title": "Integration test for `merge-task.mjs` with linkage",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-015: Integration test for `merge-task.mjs` with linkage\n\n**Priority:** high  **Effort:** M\n**Tags:** testing, sprint-shard-c\n**Depends on:** TASK-014\n\n## Description\n\nCreate `tests/integration/merge-task.test.mjs`. Set up tmp git repo with both `.tasks/` and `.issues/` fixtures + matching `.orchestrator.json`. Create a task whose description contains `Resolves ISSUE-042`. Run full merge-task flow against a fake merged branch. Assert: task shard is done + completed + notes; ISSUE-042 shard is resolved + completed + notes; both INDEX files regenerated; single commit captures both changes.\n\n## Acceptance Criteria\n\n- All assertions pass\n- Test handles both keyword + explicit-field linkage\n- Test verifies the single-commit semantic (TASK-014)\n- Test verifies non-linked task path (no .issues/ touched if no link)"
+    },
+    {
+      "id": "TASK-016",
+      "slug": "regression-test-re-run-sprint-completes-",
+      "title": "Regression test: re-run sprint completes 0 tasks",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-016: Regression test: re-run sprint completes 0 tasks\n\n**Priority:** high  **Effort:** S\n**Tags:** testing, sprint-shard-c\n**Depends on:** TASK-015\n\n## Description\n\nAdd a test that reproduces the exact silent-infinite-loop scenario from FEAT_FIXES.md §\"The actual problem\". Set up fixture, run full pre-build → merge-task cycle on TASK-001, then re-run `resolve-tasks.mjs sprint-4` and assert the queue is empty. This is the canonical fix-validation test.\n\n## Acceptance Criteria\n\n- Re-resolve returns `{ queue: [] }` after one full cycle\n- Asserts shard `status: done` directly, not just resolver output\n- Test is named `silent-infinite-loop-regression.test.mjs` for grep-ability"
+    },
+    {
+      "id": "TASK-017",
+      "slug": "rewrite-skill-skill-md-configuration-sec",
+      "title": "Rewrite `skill/SKILL.md` Configuration section",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-017: Rewrite `skill/SKILL.md` Configuration section\n\n**Priority:** medium  **Effort:** M\n**Tags:** docs, sprint-shard-d\n**Depends on:** TASK-016\n\n## Description\n\nUpdate `skill/SKILL.md` §\"Configuration reference\" with the new `shardLibraries[]` config shape. Add new top-level §\"Shard Library Integration\" covering: status inference rules + heuristics + override path; cross-library link detection (explicit field + keyword regex); resilience model when rebuild CLI is absent; troubleshooting table for common errors (ambiguous status enum, unknown link target, missing schema). Include a complete `.orchestrator.json` example with both `tasks` and `issues` libraries.\n\n## Acceptance Criteria\n\n- New §\"Shard Library Integration\" present\n- Config example is valid JSON + matches the schema in TASK-007\n- Troubleshooting table covers: ambiguous-enum, missing-schema, unknown-link, missing-rebuild-CLI\n- Backward-compat note explains legacy `tasksSource.primary` still works"
+    },
+    {
+      "id": "TASK-018",
+      "slug": "update-readme-md",
+      "title": "Update `README.md`",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-018: Update `README.md`\n\n**Priority:** medium  **Effort:** S\n**Tags:** docs, sprint-shard-d\n**Depends on:** TASK-017\n\n## Description\n\nUpdate `README.md` feature list to mention multi-library support + automatic shard write-back. Update Quickstart to show the new minimum config (single primary library). Add a \"Multi-library example\" snippet referencing `gen-tasklist` + `gen-issues` together.\n\n## Acceptance Criteria\n\n- Feature list mentions: multi-library, status write-back, cross-library linkage\n- Quickstart config example is valid + minimal\n- Multi-library example snippet matches TASK-017's example for consistency"
+    },
+    {
+      "id": "TASK-019",
+      "slug": "audit-commands-md-for-behavior-changes",
+      "title": "Audit `commands/*.md` for behavior changes",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-019: Audit `commands/*.md` for behavior changes\n\n**Priority:** medium  **Effort:** S\n**Tags:** docs, sprint-shard-d\n**Depends on:** TASK-017\n\n## Description\n\nAudit every file under `commands/`. For any slash command whose behavior changed (likely `/orchestrate`, anything that triggers `merge-task`): update help text to describe the new pre-build prompt (resume/restart/abandon), the post-merge linkage closure, and the multi-library support. Leave unchanged commands alone.\n\n## Acceptance Criteria\n\n- Every changed command's help text reflects new behavior\n- Diff of `commands/` is reviewed and committed\n- No command file references removed/renamed scripts"
+    },
+    {
+      "id": "TASK-020",
+      "slug": "live-acceptance-test-against-issues-plug",
+      "title": "Live acceptance test against `issues-plugin` sprint-4",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-020: Live acceptance test against `issues-plugin` sprint-4\n\n**Priority:** high  **Effort:** S\n**Tags:** acceptance, sprint-shard-d\n**Depends on:** TASK-016, TASK-017, TASK-018, TASK-019\n\n## Description\n\nRun the 5-step FEAT_FIXES.md acceptance test against `C:/Coding/ai_dev/issues-plugin`: clean slate (`git checkout main && git branch -D sprint-4`); `/orchestrate sprint-4`; verify TASK-001 + TASK-002 shards show `done` + timestamps + notes; verify INDEX no longer lists them; re-run `/orchestrate sprint-4` → assert 0 tasks resolved. Capture full output to `acceptance-results-<date>.md`.\n\n## Acceptance Criteria\n\n- All 5 FEAT_FIXES.md test steps pass\n- If TASK-001 or TASK-002 references an ISSUE, the issue is also marked closed\n- Output captured to a dated file in repo root (gitignored)\n- Any deviation triggers a new bug task before closing this one"
+    },
+    {
+      "id": "TASK-021",
+      "slug": "tag-release-v1-x-0",
+      "title": "Tag release v1.x.0",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-021: Tag release v1.x.0\n\n**Priority:** medium  **Effort:** XS\n**Tags:** release, sprint-shard-d\n**Depends on:** TASK-020\n\n## Description\n\nAfter live acceptance passes: bump `package.json` version (minor bump — additive backward-compat feature). Commit. Tag `v1.x.0`. Push tag. Update `CHANGELOG.md` (or create one) with summary of the change + decision-log link.\n\n## Acceptance Criteria\n\n- `package.json` version bumped per semver (minor)\n- Tag pushed to remote\n- CHANGELOG entry summarizes user-facing changes only (no implementation detail)"
+    },
+    {
+      "id": "TASK-022",
+      "slug": "post-launch-monitoring-task-placeholder",
+      "title": "Post-launch monitoring task (placeholder)",
+      "source": "tasks",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "# TASK-022: Post-launch monitoring task (placeholder)\n\n**Priority:** low  **Effort:** XS\n**Tags:** post-launch, sprint-shard-d\n**Depends on:** TASK-021\n\n## Description\n\nPlaceholder backlog task: monitor first 3 real `/orchestrate` runs against `issues-plugin` after release. Capture any unexpected behavior (status inference misses, link scanner false positives, rebuild failures in unusual env) and create follow-up bug tasks. Close this task after 3 successful runs OR after 7 days, whichever comes first.\n\n## Acceptance Criteria\n\n- 3 real-world orchestrator runs documented OR 7-day window elapsed\n- Any anomaly captured as a separate bug task\n- Closure note summarizes \"shipped clean\" or lists follow-ups"
+    },
+    {
+      "id": "001",
+      "slug": "bootstrap-test-infrastructure-vitest",
+      "title": "Bootstrap test infrastructure (vitest)",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** S · **Tags:** foundation, sprint-shard-a, testing\n**Depends on:** none\n\n**Description:**\nAdd `vitest` as a devDependency. Create `vitest.config.mjs` with `testMatch: [\"tests/**/*.test.mjs\"]`, coverage thresholds `scripts/ >= 80%`, `lib/ >= 90%` (when `lib/` exists). Add npm scripts: `test`, `test:watch`, `test:coverage`. Update `package.json` `engines.node >= 20`. Verify `npx vitest run` exits 0 on empty test set.\n\n**Acceptance Criteria:**\n- `npx vitest run` exits 0 (no tests yet, no failure)\n- `npm test` is wired to `vitest run`\n- `package.json` engines.node is `>=20`\n- `vitest.config.mjs` is valid ESM (no CJS require)"
+    },
+    {
+      "id": "002",
+      "slug": "create-test-fixtures-for-tasks-and-issue",
+      "title": "Create test fixtures for `.tasks/` and `.issues/`",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** S · **Tags:** foundation, sprint-shard-a, testing\n**Depends on:** TASK-001\n\n**Description:**\nCreate `tests/fixtures/tasks-fixture/.tasks/` with: `INDEX.json` (3 sample tasks: backlog, in-progress, done), `tasks/TASK-001.json` through `TASK-003.json`, `schemas/task.schema.json` copied verbatim from `gen-tasklist`, `config.json`. Mirror under `tests/fixtures/issues-fixture/.issues/` with issue vocabulary (`open` / `in-progress` / `resolved`) and a sample issue. Document fixture provenance in `tests/fixtures/README.md`.\n\n**Acceptance Criteria:**\n- Both fixture directories validate against their respective schemas via ajv\n- Fixture schemas are byte-identical to upstream gen-tasklist + gen-issues source (provenance noted)\n- README documents how to refresh fixtures from upstream"
+    },
+    {
+      "id": "003",
+      "slug": "implement-shard-library-mjs-core-loadlib",
+      "title": "Implement `shard-library.mjs` core: `loadLibraries`, `locateShard`, `updateShard`",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** M · **Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-001\n\n**Description:**\nCreate `scripts/shard-library.mjs`. Implement three of six public APIs per PLAN.md §3a: `loadLibraries(configPath)` (parses `shardLibraries[]`, synthesizes from legacy `tasksSource.primary` if absent, validates shape), `locateShard(library, id)` (returns absolute path or null), `updateShard(library, id, mutator)` (atomic `.tmp + rename` write, throws on missing file or mutator returning invalid shape). All exports use JSDoc with `@param`/`@returns`. No side effects on import.\n\n**Acceptance Criteria:**\n- All three functions exported and callable\n- `loadLibraries` synthesizes legacy config + emits debug warning naming the assumed defaults\n- `updateShard` is atomic — write failure leaves original file intact\n- Module has no top-level side effects (importable in tests safely)"
+    },
+    {
+      "id": "004",
+      "slug": "implement-shard-library-mjs-rebuild-stat",
+      "title": "Implement `shard-library.mjs` rebuild + status inference",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** M · **Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-003\n\n**Description:**\nAdd `rebuildLibrary(library)` (execSync with `library.rebuildCmd`, captures stderr, returns `{ ok, reason }` — never throws — emits actionable warning on non-zero exit suggesting install command). Add `resolveStatusVocab(library)` per PLAN.md §3b: if `library.statusMap` set → use it; else load schema, extract `status` enum, apply heuristic regex (`/^(in[-_]?progress|active|started|wip)$/i` for start, `/^(done|completed?|closed|resolved|fixed)$/i` for done); require exactly one match per role; throw actionable error otherwise. Cache result per library on first call.\n\n**Acceptance Criteria:**\n- `rebuildLibrary` never throws — returns `{ ok: false, reason }` on missing CLI\n- `resolveStatusVocab` returns `{ start: \"in-progress\", done: \"done\" }` for gen-tasklist schema\n- `resolveStatusVocab` returns `{ start: \"in-progress\", done: \"resolved\" }` for gen-issues schema\n- Throws with actionable message when 0 or >1 enum matches a role\n- Per-library cache survives multiple calls in same process"
+    },
+    {
+      "id": "005",
+      "slug": "implement-shard-library-mjs-link-scanner",
+      "title": "Implement `shard-library.mjs` link scanner",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** S · **Tags:** lib-core, sprint-shard-a\n**Depends on:** TASK-003\n\n**Description:**\nAdd `scanLinks(taskShard, allLibraries)` per PLAN.md §3c. Extract IDs from `taskShard[library.linkField]` (when defined) AND from keyword regex `/\\b(fix(?:es|ed)?|close[sd]?|resolve[sd]?)\\s+(ISSUE|TASK|BUG|FEAT)-\\d+/gi` over `description + notes`. Return `Map<libraryId, Set<shardId>>`. Match ID prefix against each library's shard naming convention (e.g., `ISSUE-NNN` belongs to library whose shards match that prefix). Skip + log unknown prefixes.\n\n**Acceptance Criteria:**\n- Returns empty map when no links found\n- Detects explicit `resolves: [\"ISSUE-042\"]` field correctly\n- Detects keyword phrases case-insensitively across description + notes\n- Unknown ID prefix (e.g., `FOO-001`) is skipped + logged at warn level\n- Union of explicit + keyword sources deduplicates"
+    },
+    {
+      "id": "006",
+      "slug": "unit-tests-for-shard-library-mjs-all-6-a",
+      "title": "Unit tests for `shard-library.mjs` (all 6 APIs)",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** M · **Tags:** testing, sprint-shard-a\n**Depends on:** TASK-002, TASK-003, TASK-004, TASK-005\n\n**Description:**\nCreate `tests/shard-library.test.mjs`. Cover every public API: `loadLibraries` (legacy synth, multi-library, malformed), `locateShard` (found, missing, wrong dir), `updateShard` (atomic write, mutator returning invalid shape, file-not-found), `rebuildLibrary` (success path mocked, failure path with non-zero exit), `resolveStatusVocab` (gen-tasklist, gen-issues, ambiguous enum, missing schema, statusMap override), `scanLinks` (explicit field, keyword scan, union, unknown prefix). Aim for ≥90% coverage on the helper module.\n\n**Acceptance Criteria:**\n- `npx vitest run tests/shard-library.test.mjs` exits 0\n- Coverage report shows ≥90% lines + branches for `scripts/shard-library.mjs`\n- Every error path has a negative test\n- Tests use fixtures from TASK-002, no external network"
+    },
+    {
+      "id": "007",
+      "slug": "update-load-config-mjs-to-expose-shardli",
+      "title": "Update `load-config.mjs` to expose `shardLibraries`",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** S · **Tags:** integration, sprint-shard-a\n**Depends on:** TASK-003\n\n**Description:**\nModify `scripts/load-config.mjs`. After existing config load, call `loadLibraries(configPath)` from `shard-library.mjs` and attach result as `config.shardLibraries`. Preserve legacy `config.tasksSource` for any other consumer that may read it. Document the new field in inline comments.\n\n**Acceptance Criteria:**\n- Existing callers of `load-config.mjs` see no change in legacy fields\n- `config.shardLibraries` is always an array (length ≥ 1) after load\n- A config with neither `shardLibraries` nor `tasksSource.primary` throws a clear error"
+    },
+    {
+      "id": "008",
+      "slug": "migrate-resolve-tasks-mjs-to-use-loadlib",
+      "title": "Migrate `resolve-tasks.mjs` to use `loadLibraries()`",
+      "source": "TASKS_PROPOSED.md",
+      "sprintId": "1",
+      "sprintRangeEnd": null,
+      "body": "**Priority:** high · **Effort:** S · **Tags:** integration, sprint-shard-a\n**Depends on:** TASK-007\n\n**Description:**\nModify `scripts/resolve-tasks.mjs`. Replace hardcoded `parseTasklistIndex` invocation with: find `library = config.shardLibraries.find(l => l.primary)`, read `library.indexPath`, iterate `open_tasks`, open shards from `library.shardDir/{id}.json`. Behavior is identical for default `.tasks/` config. Add regression test that resolves the same sprint as before and gets identical output.\n\n**Acceptance Criteria:**\n- `resolve-tasks.mjs sprint-4` against the issues-plugin produces byte-identical output to current behavior\n- Throws clear error if no library has `primary: true`\n- Throws clear error if multiple libraries have `primary: true`"
+    }
+  ]
+}
