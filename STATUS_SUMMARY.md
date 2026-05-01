@@ -8,3 +8,5 @@
 - [2026-05-01] Completed task-003: fix(task-003): validate shard id against safe regex (path-traversal hardening)
 
 - [2026-05-01] Completed task-004: add rebuildLibrary + resolveStatusVocab to shard-library
+
+- [2026-05-01] Completed task-005: add scanLinks to shard-library
