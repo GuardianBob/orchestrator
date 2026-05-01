@@ -6,7 +6,7 @@
 
 ---
 
-## Phase A — Foundation (no behavior change)
+## Sprint 1 — Foundation (no behavior change)
 
 ### TASK-001 — Bootstrap test infrastructure (vitest)
 **Priority:** high · **Effort:** S · **Tags:** foundation, sprint-shard-a, testing
@@ -127,7 +127,7 @@ Modify `scripts/resolve-tasks.mjs`. Replace hardcoded `parseTasklistIndex` invoc
 
 ---
 
-## Phase B — Pre-build write-back (Fixes 1, 3, 4)
+## Sprint 2 — Pre-build write-back (Fixes 1, 3, 4)
 
 ### TASK-009 — Add status flip to `branch-setup.mjs`
 **Priority:** high · **Effort:** M · **Tags:** integration, sprint-shard-b
@@ -173,7 +173,7 @@ Create `tests/integration/branch-setup.test.mjs`. Set up tmp git repo with `.tas
 
 ---
 
-## Phase C — Post-merge close (Fix 2 + linkage)
+## Sprint 3 — Post-merge close (Fix 2 + linkage)
 
 ### TASK-012 — Add primary-shard close to `merge-task.mjs`
 **Priority:** high · **Effort:** M · **Tags:** integration, sprint-shard-c
@@ -250,7 +250,7 @@ Add a test that reproduces the exact silent-infinite-loop scenario from FEAT_FIX
 
 ---
 
-## Phase D — Documentation + Live acceptance
+## Sprint 4 — Documentation + Live acceptance
 
 ### TASK-017 — Rewrite `skill/SKILL.md` Configuration section
 **Priority:** medium · **Effort:** M · **Tags:** docs, sprint-shard-d
