@@ -7,3 +7,6 @@ node_modules/
 coverage/
 .vitest-cache/
 *.log
+
+# Windows reserved name — created accidentally by tools emitting `> NUL`
+NUL
