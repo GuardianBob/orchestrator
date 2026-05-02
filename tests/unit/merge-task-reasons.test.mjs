@@ -18,6 +18,9 @@ const {
   REASON_NOT_ATTEMPTED,
   REASON_SKIPPED_NO_CHANGES,
   REASON_PRIMARY_SHARD_MISSING,
+  REASON_COMMIT_OK,
+  REASON_COMMIT_NO_CHANGES,
+  REASON_COMMIT_NOT_ATTEMPTED,
   reasonVocabError,
   reasonLocateError,
   reasonUpdateFailed,
@@ -27,6 +30,9 @@ const {
   reasonRebuildFailed,
   reasonConfigError,
   reasonUncaught,
+  reasonCommitAddFailed,
+  reasonCommitDiffFailed,
+  reasonCommitFailed,
   REASON_CONSTANTS,
   REASON_BUILDERS,
 } = registry;
@@ -46,10 +52,13 @@ describe('merge-task-reasons registry', () => {
       REASON_NOT_ATTEMPTED,
       REASON_SKIPPED_NO_CHANGES,
       REASON_PRIMARY_SHARD_MISSING,
+      REASON_COMMIT_OK,
+      REASON_COMMIT_NO_CHANGES,
+      REASON_COMMIT_NOT_ATTEMPTED,
     ];
 
-    it('exposes 9 static constants', () => {
-      expect(constants.length).toBe(9);
+    it('exposes 12 static constants', () => {
+      expect(constants.length).toBe(12);
     });
 
     it('all values are non-empty strings matching wire shape', () => {
@@ -76,10 +85,13 @@ describe('merge-task-reasons registry', () => {
       ['reasonRebuildFailed',   reasonRebuildFailed,   'rebuild-failed'],
       ['reasonConfigError',     reasonConfigError,     'config-error'],
       ['reasonUncaught',        reasonUncaught,        'uncaught'],
+      ['reasonCommitAddFailed', reasonCommitAddFailed, 'commit-add-failed'],
+      ['reasonCommitDiffFailed',reasonCommitDiffFailed,'commit-diff-failed'],
+      ['reasonCommitFailed',    reasonCommitFailed,    'commit-failed'],
     ];
 
-    it('exposes 9 builders', () => {
-      expect(builderEntries.length).toBe(9);
+    it('exposes 12 builders', () => {
+      expect(builderEntries.length).toBe(12);
     });
 
     it('every builder is a function', () => {
@@ -101,12 +113,12 @@ describe('merge-task-reasons registry', () => {
   });
 
   describe('frozen aggregates', () => {
-    it('REASON_CONSTANTS contains exactly 9 entries', () => {
-      expect(Object.keys(REASON_CONSTANTS).length).toBe(9);
+    it('REASON_CONSTANTS contains exactly 12 entries', () => {
+      expect(Object.keys(REASON_CONSTANTS).length).toBe(12);
     });
 
-    it('REASON_BUILDERS contains exactly 9 entries', () => {
-      expect(Object.keys(REASON_BUILDERS).length).toBe(9);
+    it('REASON_BUILDERS contains exactly 12 entries', () => {
+      expect(Object.keys(REASON_BUILDERS).length).toBe(12);
     });
 
     it('REASON_CONSTANTS is frozen', () => {
@@ -117,8 +129,8 @@ describe('merge-task-reasons registry', () => {
       expect(Object.isFrozen(REASON_BUILDERS)).toBe(true);
     });
 
-    it('total identifier count >= 17 (covers 22 site-occurrences)', () => {
-      expect(Object.keys(REASON_CONSTANTS).length + Object.keys(REASON_BUILDERS).length).toBeGreaterThanOrEqual(17);
+    it('total identifier count >= 24 (covers commit-deltas additions)', () => {
+      expect(Object.keys(REASON_CONSTANTS).length + Object.keys(REASON_BUILDERS).length).toBeGreaterThanOrEqual(24);
     });
   });
 });
