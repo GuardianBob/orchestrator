@@ -29,3 +29,5 @@
 - [2026-05-02] Completed task-012: Add primary-shard close to merge-task.mjs
 
 - [2026-05-02] Completed task-013: Add cross-library link closing to merge-task.mjs
+
+- [2026-05-02] Completed task-027: refactor(task-027): consolidate lib/, extract is-main, add reasons registry
