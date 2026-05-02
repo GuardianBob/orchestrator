@@ -250,7 +250,7 @@ Add a test that reproduces the exact silent-infinite-loop scenario from FEAT_FIX
 
 ---
 
-## Sprint 4 — Documentation + Live acceptance
+## Sprint 5 — Documentation + Live acceptance
 
 ### TASK-017 — Rewrite `skill/SKILL.md` Configuration section
 **Priority:** medium · **Effort:** M · **Tags:** docs, sprint-shard-d

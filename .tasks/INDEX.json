@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T02:45:42.479Z",
+  "updated": "2026-05-02T03:16:24.766Z",
   "next_task_id": "TASK-036",
   "previous_task": null,
   "current_task": {
@@ -337,7 +337,8 @@
       "tags": [
         "bug",
         "resilience",
-        "sprint-3-followup"
+        "sprint-3-followup",
+        "sprint-4"
       ]
     },
     {
@@ -349,7 +350,8 @@
       "tags": [
         "refactor",
         "tech-debt",
-        "sprint-3-followup"
+        "sprint-3-followup",
+        "sprint-4"
       ]
     },
     {
@@ -394,7 +396,8 @@
       "priority": "high",
       "tags": [
         "security",
-        "sprint-3-followup"
+        "sprint-3-followup",
+        "sprint-4"
       ]
     },
     {

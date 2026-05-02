@@ -5,7 +5,8 @@
   "tags": [
     "refactor",
     "tech-debt",
-    "sprint-3-followup"
+    "sprint-3-followup",
+    "sprint-4"
   ],
   "depends_on": [
     "TASK-014"

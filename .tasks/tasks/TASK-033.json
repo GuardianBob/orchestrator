@@ -4,7 +4,8 @@
   "effort": "S",
   "tags": [
     "security",
-    "sprint-3-followup"
+    "sprint-3-followup",
+    "sprint-4"
   ],
   "depends_on": [
     "TASK-012"
