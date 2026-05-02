@@ -16,8 +16,8 @@ import { fileURLToPath } from 'node:url';
 import {
   closePrimaryShardOnMerge,
   closeLinkedShardsOnMerge,
-  commitShardDeltas,
 } from '../../scripts/merge-task.mjs';
+import { commitShardDeltas } from '../../lib/commit-shard-deltas.mjs';
 import { loadLibraries, __resetCache } from '../../lib/shard-library.mjs';
 
 // ---------------------------------------------------------------------------
