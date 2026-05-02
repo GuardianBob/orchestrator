@@ -25,3 +25,5 @@
 - [2026-05-01] Completed task-008: test(task-008): migrate snapshot tests to controlled fixture
 
 - [2026-05-01] Completed task-009: Add status flip to branch-setup.mjs
+
+- [2026-05-02] Completed task-012: Add primary-shard close to merge-task.mjs
