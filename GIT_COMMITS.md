@@ -13,3 +13,6 @@ feat(task-009): Add status flip to branch-setup.mjs
 
 ## 2026-05-02 `9c21730` sprint-3-task-012-add-primary-shard-close-to-merge-task
 feat(task-012): Add primary-shard close to merge-task.mjs
+
+## 2026-05-02 `e2828b1` sprint-4-task-028-resolver-shard-status-safety-net
+feat(task-028): Resolver: add per-shard status safety net + drift warning

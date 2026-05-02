@@ -35,3 +35,5 @@
 - [2026-05-02] Completed task-014: feat(orchestrator): TASK-014 commit shard deltas on merge
 
 - [2026-05-02] Completed task-015: test(orchestrator): TASK-015 integration test for merge-task workflow
+
+- [2026-05-02] Completed task-028: Resolver: add per-shard status safety net + drift warning

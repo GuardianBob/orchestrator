@@ -22,3 +22,5 @@
 | 2026-05-02T01:58 | 014 | 1 | pass | skip | skip | approve,approve,approve | PASS |  |
 | 2026-05-02T02:15 | 015 | 1 | pass | skip | skip | approve,approve,approve | PASS |  |
 | 2026-05-02T02:38 | 016 | 1 | pass | skip | skip | approve,approve,approve | PASS |  |
+| 2026-05-02T03:36 | 028 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Defense-in-depth gate placement is correct for now. Resolver is the integration point that converts INDEX rows into a dispatch queue; it owns the 'is this task actually open?' decision. Pushing t |
+| 2026-05-02T03:37 | 028 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Defense-in-depth gate placement is correct for now. Resolver is the integration point that converts INDEX rows into a dispatch queue; it owns the 'is this task actually open?' decision. Pushing t |
