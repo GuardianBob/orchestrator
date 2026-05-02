@@ -178,6 +178,22 @@ function parseShardLibrary(lib) {
     } else {
       console.error(`[resolve-tasks] WARN: shard for ${row.id} is missing under ${lib.shardDir}; will dispatch with title-only body (no description, no acceptance criteria). Run \`npx tasklist-rebuild\` to repair.`);
     }
+    // --- TASK-028: shard-status safety net (LD-ARC-002) -----------------------
+    // shard.status is authoritative; INDEX row.status is a derived projection
+    // that can drift when `npx tasklist-rebuild` fails or is skipped. If the
+    // shard says terminal but INDEX still lists the row as open, refuse to
+    // re-queue the task and warn loudly to stderr (LD-PAT-007).
+    if (shard && shard.status) {
+      const shardStatus = String(shard.status).toLowerCase();
+      if (DONE_STATUSES.has(shardStatus)) {
+        const indexStatus = String(row.status || 'unknown').toLowerCase();
+        console.warn(
+          `[resolver] shard drift: ${row.id} status=${shardStatus} in shard but INDEX says ${indexStatus}; skipping. Run: npx tasklist-rebuild`
+        );
+        continue;
+      }
+    }
+    // --------------------------------------------------------------------------
     const title = (shard && shard.title) || row.title || row.id;
     const bodyParts = [`# ${row.id}: ${title}`, ''];
     if (shard?.priority) bodyParts.push(`**Priority:** ${shard.priority}  **Effort:** ${shard.effort || '?'}`);
