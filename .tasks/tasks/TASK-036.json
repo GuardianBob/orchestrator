@@ -1,0 +1,27 @@
+{
+  "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+  "effort": "S",
+  "priority": "high",
+  "tags": [
+    "security",
+    "sanitization",
+    "sprint-4",
+    "sprint-3-followup"
+  ],
+  "description": "TASK-033 closed SEC-W-012-1 in scripts/merge-task.mjs by introducing lib/sanitize-error.mjs and wrapping 6 stderr `e.message` interpolation sites. The architect-reviewer for TASK-033 audited the rest of the codebase and identified 6 additional `e.message` leak sites of the SAME class in two other CLI scripts:\n\n- scripts/branch-setup.mjs lines 247, 303, 336 (3 sites)\n- scripts/resolve-tasks.mjs lines 145, 167, 176 (3 sites — including the new TASK-028 console.warn at L145)\n\nThis task applies sanitizeErrorMessage(e) to all 6 sites. Same pattern as TASK-033. No new lib code, no new dependencies. After this lands, the leak class is fully closed across the project and the natural prerequisite for promoting LD-PAT-008 ('always sanitize stderr in plugin output') is met (third independent occurrence rule).",
+  "acceptance_criteria": [
+    "All 6 identified sites in branch-setup.mjs (3) and resolve-tasks.mjs (3) replaced with sanitizeErrorMessage(e) calls; verify via grep returns ZERO matches in console.warn/error and stderr.write paths",
+    "Both files import sanitizeErrorMessage from '../lib/sanitize-error.mjs' at the top",
+    "All 187 baseline tests continue passing (pre-flight grep audit of tests/ for path-fragment assertions to confirm no test updates needed)",
+    "Net LOC delta < +10 across both scripts combined (just imports + replacing string templates)",
+    "No new dependencies added",
+    "Optional: 1 integration test per script asserting stderr doesn't leak paths when an error path is triggered"
+  ],
+  "depends_on": [
+    "TASK-033"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T04:20:10.947Z",
+  "updated": "2026-05-02T04:20:10.947Z",
+  "id": "TASK-036"
+}
