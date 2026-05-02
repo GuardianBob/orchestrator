@@ -13,11 +13,13 @@
     "Test verifies the single-commit semantic (TASK-014)",
     "Test verifies non-linked task path (no .issues/ touched if no link)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:44.654Z",
-  "updated": "2026-05-01T19:10:55.315Z",
+  "updated": "2026-05-02T05:54:25.258Z",
   "id": "TASK-015",
   "depends_on": [
     "TASK-014"
-  ]
+  ],
+  "completed": "2026-05-01T19:06:44-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (2991e88) — shard flag was stale."
 }

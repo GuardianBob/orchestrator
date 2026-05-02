@@ -14,12 +14,14 @@
     "Unknown linked ID logs warning but doesn't fail merge",
     "Each linked library rebuilt at most once per merge (not once per shard)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:41.729Z",
-  "updated": "2026-05-01T19:10:55.310Z",
+  "updated": "2026-05-02T05:54:25.234Z",
   "id": "TASK-013",
   "depends_on": [
     "TASK-012",
     "TASK-005"
-  ]
+  ],
+  "completed": "2026-05-01T17:41:11-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (b1ef8fb) — shard flag was stale."
 }

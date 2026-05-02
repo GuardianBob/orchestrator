@@ -12,11 +12,13 @@
     "`config.shardLibraries` is always an array (length ≥ 1) after load",
     "A config with neither `shardLibraries` nor `tasksSource.primary` throws a clear error"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:31.880Z",
-  "updated": "2026-05-01T19:10:55.292Z",
+  "updated": "2026-05-02T05:54:25.159Z",
   "id": "TASK-007",
   "depends_on": [
     "TASK-003"
-  ]
+  ],
+  "completed": "2026-05-01T13:46:24-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (7c2d864) — shard flag was stale."
 }

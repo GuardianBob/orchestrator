@@ -13,12 +13,14 @@
     "Rebuild failure emits warning but doesn't block subsequent steps",
     "Runs only on successful merge (skip on merge conflict)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:40.273Z",
-  "updated": "2026-05-01T19:10:55.307Z",
+  "updated": "2026-05-02T05:54:25.221Z",
   "id": "TASK-012",
   "depends_on": [
     "TASK-006",
     "TASK-008"
-  ]
+  ],
+  "completed": "2026-05-01T17:15:29-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (9c21730) — shard flag was stale."
 }

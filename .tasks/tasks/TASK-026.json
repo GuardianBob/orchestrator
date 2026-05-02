@@ -19,8 +19,10 @@
     "TASK-010",
     "TASK-011"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T23:40:36.615Z",
-  "updated": "2026-05-01T23:40:36.615Z",
-  "id": "TASK-026"
+  "updated": "2026-05-02T05:54:25.282Z",
+  "id": "TASK-026",
+  "completed": "2026-05-01T16:40:46-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (7541772) — shard flag was stale."
 }

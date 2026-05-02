@@ -12,11 +12,13 @@
     "Asserts shard `status: done` directly, not just resolver output",
     "Test is named `silent-infinite-loop-regression.test.mjs` for grep-ability"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:46.133Z",
-  "updated": "2026-05-01T19:10:55.318Z",
+  "updated": "2026-05-02T05:54:25.270Z",
   "id": "TASK-016",
   "depends_on": [
     "TASK-015"
-  ]
+  ],
+  "completed": "2026-05-01T19:25:05-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (2eb9089) — shard flag was stale."
 }

@@ -14,8 +14,10 @@
     "`package.json` engines.node is `>=20`",
     "`vitest.config.mjs` is valid ESM (no CJS require)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:21.426Z",
-  "updated": "2026-05-01T19:10:21.426Z",
-  "id": "TASK-001"
+  "updated": "2026-05-02T05:54:25.079Z",
+  "id": "TASK-001",
+  "completed": "2026-05-01T12:48:45-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (cba9d03) — shard flag was stale."
 }

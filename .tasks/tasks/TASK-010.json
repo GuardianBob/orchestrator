@@ -13,12 +13,14 @@
     "Non-interactive run defaults to abandon with code 4",
     "Restart appends notes entry without overwriting prior notes"
   ],
-  "status": "in-progress",
+  "status": "done",
   "created": "2026-05-01T19:10:37.086Z",
-  "updated": "2026-05-01T22:36:22.597Z",
+  "updated": "2026-05-02T05:54:25.196Z",
   "id": "TASK-010",
   "depends_on": [
     "TASK-009"
   ],
-  "started": "2026-05-01T22:36:22.597Z"
+  "started": "2026-05-01T22:36:22.597Z",
+  "completed": "2026-05-01T15:36:56-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (d529c3a) — shard flag was stale."
 }

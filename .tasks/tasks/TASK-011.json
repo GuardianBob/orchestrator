@@ -12,12 +12,14 @@
     "Rebuild-absence test passes (mock `npx tasklist-rebuild` to fail)",
     "Test cleans up tmp git repo on completion (no test pollution)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:38.627Z",
-  "updated": "2026-05-01T19:10:55.303Z",
+  "updated": "2026-05-02T05:54:25.209Z",
   "id": "TASK-011",
   "depends_on": [
     "TASK-009",
     "TASK-010"
-  ]
+  ],
+  "completed": "2026-05-01T16:12:07-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (add771f) — shard flag was stale."
 }

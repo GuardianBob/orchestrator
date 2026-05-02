@@ -13,11 +13,13 @@
     "`updateShard` is atomic — write failure leaves original file intact",
     "Module has no top-level side effects (importable in tests safely)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:25.010Z",
-  "updated": "2026-05-01T19:10:55.280Z",
+  "updated": "2026-05-02T05:54:25.109Z",
   "id": "TASK-003",
   "depends_on": [
     "TASK-001"
-  ]
+  ],
+  "completed": "2026-05-01T13:13:23-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (6842db3) — shard flag was stale."
 }

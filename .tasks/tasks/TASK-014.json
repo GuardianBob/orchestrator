@@ -13,11 +13,13 @@
     "No-op commit suppressed (e.g., when nothing changed because rebuild failed and shards are already correct)",
     "Living-docs commit (existing behavior) still runs after"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:43.203Z",
-  "updated": "2026-05-01T19:10:55.313Z",
+  "updated": "2026-05-02T05:54:25.246Z",
   "id": "TASK-014",
   "depends_on": [
     "TASK-013"
-  ]
+  ],
+  "completed": "2026-05-01T18:46:30-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (8a35c1f) — shard flag was stale."
 }

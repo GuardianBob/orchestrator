@@ -18,8 +18,10 @@
     "branch-setup.mjs uses lib/task-id.mjs (deriveTaskId removed; normalizeTaskId imported)",
     "All 135 existing tests still pass plus new tests: is-main (Windows path + npm-link junction cases) and reasons-registry (constants exported + value-uniqueness assertion)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-02T01:00:37.776Z",
-  "updated": "2026-05-02T01:00:37.776Z",
-  "id": "TASK-027"
+  "updated": "2026-05-02T05:54:25.295Z",
+  "id": "TASK-027",
+  "completed": "2026-05-01T18:00:51-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (fd339dd) — shard flag was stale."
 }

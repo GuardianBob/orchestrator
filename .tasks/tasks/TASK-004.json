@@ -14,11 +14,13 @@
     "Throws with actionable message when 0 or >1 enum matches a role",
     "Per-library cache survives multiple calls in same process"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:26.814Z",
-  "updated": "2026-05-01T19:10:55.282Z",
+  "updated": "2026-05-02T05:54:25.121Z",
   "id": "TASK-004",
   "depends_on": [
     "TASK-003"
-  ]
+  ],
+  "completed": "2026-05-01T13:27:55-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (74fbfa5) — shard flag was stale."
 }

@@ -13,11 +13,13 @@
     "Fixture schemas are byte-identical to upstream gen-tasklist + gen-issues source (provenance noted)",
     "README documents how to refresh fixtures from upstream"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:23.305Z",
-  "updated": "2026-05-01T19:10:55.275Z",
+  "updated": "2026-05-02T05:54:25.096Z",
   "id": "TASK-002",
   "depends_on": [
     "TASK-001"
-  ]
+  ],
+  "completed": "2026-05-01T13:03:23-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (9e46ea8) — shard flag was stale."
 }

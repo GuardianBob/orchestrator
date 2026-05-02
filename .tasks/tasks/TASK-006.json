@@ -13,14 +13,16 @@
     "Every error path has a negative test",
     "Tests use fixtures from TASK-002, no external network"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:30.244Z",
-  "updated": "2026-05-01T19:10:55.289Z",
+  "updated": "2026-05-02T05:54:25.147Z",
   "id": "TASK-006",
   "depends_on": [
     "TASK-002",
     "TASK-003",
     "TASK-004",
     "TASK-005"
-  ]
+  ],
+  "completed": "2026-05-01T13:43:07-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (b6ce43b) — shard flag was stale."
 }

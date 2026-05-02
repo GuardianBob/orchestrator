@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T04:33:07.956Z",
+  "updated": "2026-05-02T05:55:17.223Z",
   "next_task_id": "TASK-037",
   "counts": {
     "total": 36,
-    "backlog": 31,
+    "backlog": 14,
     "ready": 0,
-    "in_progress": 1,
+    "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 4,
+    "done": 22,
     "cancelled": 0,
-    "open": 32,
-    "closed": 4,
+    "open": 14,
+    "closed": 22,
     "archived": 0
   },
   "previous_task": {
@@ -21,19 +21,15 @@
     "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
     "status": "done"
   },
-  "current_task": {
-    "id": "TASK-010",
-    "title": "Implement collision prompt (resume / restart / abandon)",
-    "status": "in-progress"
-  },
+  "current_task": null,
   "next_task": {
-    "id": "TASK-001",
-    "title": "Bootstrap test infrastructure (vitest)",
+    "id": "TASK-017",
+    "title": "Rewrite `skill/SKILL.md` Configuration section",
     "status": "backlog"
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 32,
+    "open_tasks": 14,
     "blocked_tasks": 0
   }
 }

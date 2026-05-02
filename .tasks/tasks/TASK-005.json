@@ -14,11 +14,13 @@
     "Unknown ID prefix (e.g., `FOO-001`) is skipped + logged at warn level",
     "Union of explicit + keyword sources deduplicates"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:28.608Z",
-  "updated": "2026-05-01T19:10:55.285Z",
+  "updated": "2026-05-02T05:54:25.133Z",
   "id": "TASK-005",
   "depends_on": [
     "TASK-003"
-  ]
+  ],
+  "completed": "2026-05-01T13:36:30-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (8bc075f) — shard flag was stale."
 }

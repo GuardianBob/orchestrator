@@ -13,12 +13,14 @@
     "Rebuild failure emits warning but doesn't block builder dispatch",
     "Atomic write — interrupted run leaves shard either fully old or fully new, never partial"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:35.656Z",
-  "updated": "2026-05-01T19:10:55.297Z",
+  "updated": "2026-05-02T05:54:25.183Z",
   "id": "TASK-009",
   "depends_on": [
     "TASK-006",
     "TASK-008"
-  ]
+  ],
+  "completed": "2026-05-01T15:30:21-07:00",
+  "notes": "Reconciled: shipped 2026-05-01 (c9caddd) — shard flag was stale."
 }
