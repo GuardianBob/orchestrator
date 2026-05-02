@@ -45,3 +45,5 @@
 - [2026-05-02] Completed task-036: Apply sanitizeErrorMessage to branch-setup.mjs + resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)
 
 - [2026-05-02] Completed task-017: Rewrite skill/SKILL.md Configuration section + add Shard Library Integration
+
+- [2026-05-02] Completed task-018: Update README.md for multi-library + write-back + cross-library linkage
