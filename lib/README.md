@@ -25,6 +25,7 @@ Verify with: `grep -rn "from '\.\./scripts/" lib/` (must return zero).
 | Module | Purpose |
 |--------|---------|
 | `collision-prompt.mjs`   | Branch-setup collision UX (prompt + parse + restart-shard mutator). |
+| `commit-shard-deltas.mjs`| TASK-029 sub-extraction — stage + commit shard-library deltas onto sprint branch (post-merge sibling helper). |
 | `is-main.mjs`            | LD-PAT-005 — `isMain(import.meta.url)` guard for CLI entrypoints. |
 | `merge-task-reasons.mjs` | Central registry for `merge-task.mjs` envelope reason codes. |
 | `shard-library.mjs`      | Sharded-library I/O (load, locate, update, rebuild, scan-links). |

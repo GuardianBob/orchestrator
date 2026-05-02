@@ -1,38 +1,42 @@
-// tests/unit/merge-task-commit-deltas.test.mjs
-// Smoke tests for commitShardDeltas (TASK-014).
-// Asserts:
-//   1. Happy path: 2 libraries → stage both, diff=1 (changes), commit succeeds.
-//   2. No-op path: stage succeeds, diff=0 → no commit invoked, REASON_COMMIT_NO_CHANGES.
-//   3. git add failure → early abort, no diff/commit invoked.
-//   4. git diff returns 128 (broken) → reasonCommitDiffFailed.
-//   5. git commit fails (status 1) → reasonCommitFailed; no rev-parse called.
-//   6. Empty libIds (both shardClose.libraryId missing AND linkedShardClose empty) → shortcut no-op.
-//   7. Unknown libraryId in linkedShardClose.perLibrary[] → logged + skipped, others proceed.
+// tests/unit/commit-shard-deltas.test.mjs
+// TASK-029 — Unit tests for commitShardDeltas, now living in
+// lib/commit-shard-deltas.mjs. Uses the `run` dependency-injection seam
+// instead of vi.mock('node:child_process', ...) — cleaner and the seam was
+// designed for it.
+//
+// Eight scenarios:
+//   1. Happy path: 2 libraries → stage both, diff=1, commit ok, sha captured.
+//   2. No-op: stage succeeds, diff=0 → no commit invoked.
+//   3. git add failure → early abort.
+//   4. git diff broken (status 128) → reasonCommitDiffFailed.
+//   5. git commit fails → reasonCommitFailed; no rev-parse called.
+//   6. Empty libIds → shortcut no-op, run never invoked.
+//   7. Unknown libraryId in linkedShardClose → logged + skipped.
+//   8. Atomic-write semantics: rev-parse fails post-commit → committed:true,
+//      reason:commit-ok, sha:null, log records rev-parse failure.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('node:child_process', async () => {
-  const actual = await vi.importActual('node:child_process');
-  return { ...actual, spawnSync: vi.fn(), execSync: actual.execSync };
-});
-
-const cp = await import('node:child_process');
-const { commitShardDeltas } = await import('../../scripts/merge-task.mjs');
+import { describe, it, expect } from 'vitest';
+import { commitShardDeltas } from '../../lib/commit-shard-deltas.mjs';
 
 const tasksLib  = { id: 'tasks',  primary: true,  indexPath: '/repo/.tasks/INDEX.json' };
 const issuesLib = { id: 'issues', primary: false, indexPath: '/repo/.issues/INDEX.json' };
 const libraries = [tasksLib, issuesLib];
 
-const ARGV = (calls) => calls.map(c => c[1]);
-const callsFor = (verb) => cp.spawnSync.mock.calls.filter(c => c[1] && c[1][0] === verb);
+// Build a `run` mock that records calls and dispatches by verb (argv[0]).
+// Returns { run, calls, callsFor }.
+function mkRun(handler) {
+  const calls = [];
+  const run = (file, argv, opts) => {
+    calls.push({ file, argv, opts });
+    return handler(file, argv, opts);
+  };
+  const callsFor = (verb) => calls.filter((c) => c.argv && c.argv[0] === verb);
+  return { run, calls, callsFor };
+}
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-describe('commitShardDeltas', () => {
+describe('commitShardDeltas (lib)', () => {
   it('happy path: two libraries staged, diff has changes, commit succeeds', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, calls, callsFor } = mkRun((file, argv) => {
       const verb = argv[0];
       if (verb === 'add')        return { status: 0, stdout: '', stderr: '' };
       if (verb === 'diff' && argv.includes('--quiet'))   return { status: 1, stdout: '', stderr: '' };
@@ -48,6 +52,7 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [{ libraryId: 'issues', closedIds: ['ISSUE-1'] }] },
       libraries, cwd: '/repo', log: () => {},
+      run,
     });
 
     expect(result.committed).toBe(true);
@@ -58,19 +63,26 @@ describe('commitShardDeltas', () => {
 
     const adds = callsFor('add');
     expect(adds).toHaveLength(2);
-    expect(adds[0][1]).toEqual(['add', '--', '/repo/.tasks']);
-    expect(adds[1][1]).toEqual(['add', '--', '/repo/.issues']);
+    // Path comparison is platform-tolerant: both candidates use POSIX-style
+    // separators in test fixtures, but path.dirname on Windows may emit '\'.
+    // Normalize before comparing.
+    const norm = (s) => s.replace(/\\/g, '/');
+    expect(norm(adds[0].argv[2])).toBe('/repo/.tasks');
+    expect(norm(adds[1].argv[2])).toBe('/repo/.issues');
 
     const commitCalls = callsFor('commit');
     expect(commitCalls).toHaveLength(1);
-    const commitArgv = commitCalls[0][1];
-    expect(commitArgv[0]).toBe('commit');
-    expect(commitArgv[1]).toBe('-m');
-    expect(commitArgv[2]).toBe('chore(orchestrator): close TASK-014 + linked shards [deadbeefcafe]');
+    expect(commitCalls[0].argv[0]).toBe('commit');
+    expect(commitCalls[0].argv[1]).toBe('-m');
+    expect(commitCalls[0].argv[2]).toBe('chore(orchestrator): close TASK-014 + linked shards [deadbeefcafe]');
+
+    // belt-and-suspenders: total subprocess invocations match the pipeline:
+    // 2 adds + 1 diff --quiet + 1 diff --numstat + 1 commit + 1 rev-parse = 6
+    expect(calls).toHaveLength(6);
   });
 
   it('no-op path: diff returns status 0 → suppress commit', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, callsFor } = mkRun((file, argv) => {
       if (argv[0] === 'add')  return { status: 0, stdout: '', stderr: '' };
       if (argv[0] === 'diff') return { status: 0, stdout: '', stderr: '' };
       throw new Error(`unexpected call: ${argv.join(' ')}`);
@@ -81,6 +93,7 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [] },
       libraries, cwd: '/repo', log: () => {},
+      run,
     });
 
     expect(result.committed).toBe(false);
@@ -93,7 +106,7 @@ describe('commitShardDeltas', () => {
   });
 
   it('git add failure: early abort, no diff/commit invoked', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, callsFor } = mkRun((file, argv) => {
       if (argv[0] === 'add') return { status: 128, stdout: '', stderr: 'fatal' };
       throw new Error(`unexpected call: ${argv.join(' ')}`);
     });
@@ -104,18 +117,19 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [{ libraryId: 'issues' }] },
       libraries, cwd: '/repo', log: (m) => logged.push(m),
+      run,
     });
 
     expect(result.committed).toBe(false);
     expect(result.reason).toBe('commit-add-failed:128');
-    expect(callsFor('add')).toHaveLength(1);                // aborted after first failure
+    expect(callsFor('add')).toHaveLength(1);
     expect(callsFor('diff')).toHaveLength(0);
     expect(callsFor('commit')).toHaveLength(0);
     expect(logged.join('')).toMatch(/add failed for 'tasks'/);
   });
 
   it('git diff broken (status 128) → reasonCommitDiffFailed', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, callsFor } = mkRun((file, argv) => {
       if (argv[0] === 'add')  return { status: 0, stdout: '', stderr: '' };
       if (argv[0] === 'diff') return { status: 128, stdout: '', stderr: 'broken' };
       throw new Error(`unexpected call: ${argv.join(' ')}`);
@@ -126,6 +140,7 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [] },
       libraries, cwd: '/repo', log: () => {},
+      run,
     });
 
     expect(result.committed).toBe(false);
@@ -134,7 +149,7 @@ describe('commitShardDeltas', () => {
   });
 
   it('git commit failure (status 1) → reasonCommitFailed; no rev-parse', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, callsFor } = mkRun((file, argv) => {
       if (argv[0] === 'add')      return { status: 0, stdout: '', stderr: '' };
       if (argv[0] === 'diff' && argv.includes('--quiet'))   return { status: 1, stdout: '', stderr: '' };
       if (argv[0] === 'diff' && argv.includes('--numstat')) return { status: 0, stdout: '1\t0\tfile\n', stderr: '' };
@@ -147,6 +162,7 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [] },
       libraries, cwd: '/repo', log: () => {},
+      run,
     });
 
     expect(result.committed).toBe(false);
@@ -156,21 +172,26 @@ describe('commitShardDeltas', () => {
   });
 
   it('empty libIds: no shardClose.libraryId AND empty linkedShardClose → shortcut no-op', () => {
+    const { run, calls } = mkRun(() => {
+      throw new Error('run must not be invoked when libIds set is empty');
+    });
+
     const result = commitShardDeltas({
       taskId: 'TASK-014', mergeSha: 'abcdef123456',
       shardClose: { closed: false, reason: 'no-primary' },
       linkedShardClose: { perLibrary: [] },
       libraries, cwd: '/repo', log: () => {},
+      run,
     });
 
     expect(result.committed).toBe(false);
     expect(result.reason).toBe('commit-no-changes');
     expect(result.libraries).toEqual([]);
-    expect(cp.spawnSync).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
   });
 
   it('unknown libraryId in linkedShardClose → logged + skipped, valid libraries proceed', () => {
-    cp.spawnSync.mockImplementation((file, argv) => {
+    const { run, callsFor } = mkRun((file, argv) => {
       if (argv[0] === 'add')      return { status: 0, stdout: '', stderr: '' };
       if (argv[0] === 'diff' && argv.includes('--quiet'))   return { status: 1, stdout: '', stderr: '' };
       if (argv[0] === 'diff' && argv.includes('--numstat')) return { status: 0, stdout: '1\t0\tx\n', stderr: '' };
@@ -185,11 +206,40 @@ describe('commitShardDeltas', () => {
       shardClose: { closed: true, libraryId: 'tasks' },
       linkedShardClose: { perLibrary: [{ libraryId: 'ghost-lib' }, { libraryId: 'issues' }] },
       libraries, cwd: '/repo', log: (m) => logged.push(m),
+      run,
     });
 
     expect(result.committed).toBe(true);
-    expect(result.libraries).toEqual(['tasks', 'issues']);   // ghost-lib skipped
+    expect(result.libraries).toEqual(['tasks', 'issues']);
     expect(callsFor('add')).toHaveLength(2);
     expect(logged.join('')).toMatch(/skip unknown library 'ghost-lib'/);
+  });
+
+  it('atomic-write: rev-parse fails post-commit → committed:true, sha:null, reason commit-ok', () => {
+    const { run, callsFor } = mkRun((file, argv) => {
+      if (argv[0] === 'add')      return { status: 0, stdout: '', stderr: '' };
+      if (argv[0] === 'diff' && argv.includes('--quiet'))   return { status: 1, stdout: '', stderr: '' };
+      if (argv[0] === 'diff' && argv.includes('--numstat')) return { status: 0, stdout: '1\t0\tx\n', stderr: '' };
+      if (argv[0] === 'commit')   return { status: 0, stdout: '', stderr: '' };
+      if (argv[0] === 'rev-parse')return { status: 128, stdout: '', stderr: 'rev-parse died' };
+      throw new Error(`unexpected call: ${argv.join(' ')}`);
+    });
+    const logged = [];
+
+    const result = commitShardDeltas({
+      taskId: 'TASK-014', mergeSha: 'abcdef123456',
+      shardClose: { closed: true, libraryId: 'tasks' },
+      linkedShardClose: { perLibrary: [] },
+      libraries, cwd: '/repo', log: (m) => logged.push(m),
+      run,
+    });
+
+    // Commit IS on disk; rev-parse failure is informational only.
+    expect(result.committed).toBe(true);
+    expect(result.reason).toBe('commit-ok');
+    expect(result.sha).toBeNull();
+    expect(result.files).toBe(1);
+    expect(callsFor('rev-parse')).toHaveLength(1);
+    expect(logged.join('')).toMatch(/rev-parse post-commit failed/);
   });
 });
