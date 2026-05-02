@@ -1,0 +1,22 @@
+{
+  "title": "tasklist-doctor: INDEX integrity check command",
+  "priority": "low",
+  "effort": "M",
+  "tags": [
+    "feature",
+    "resilience",
+    "sprint-3-followup"
+  ],
+  "description": "Architect-reviewer flagged ARCH-N: complement to TASK-028 resolver safety net. Add an orchestrator-side `tasklist-doctor` command (or scripts/tasklist-doctor.mjs) that scans .tasks/tasks/*.json shard files vs INDEX rows and reports drift:\n- Shards in INDEX.open_tasks but with shard.status in DONE_STATUSES (would be caught by TASK-028's resolver safety net, but doctor surfaces it on-demand as a maintenance/CI check)\n- Shards listed in INDEX but missing on disk (orphaned INDEX rows)\n- Shard files on disk but missing from INDEX (un-rebuilt INDEX)\n- Shards with malformed JSON or missing required fields\n\nReport format: human-readable summary + JSON envelope for CI consumption. Exit codes: 0 = clean, 1 = drift detected, 2 = errors.\n\nNot urgent — TASK-028 catches the runtime case. Doctor is for proactive auditing and CI gates.",
+  "acceptance_criteria": [
+    "scripts/tasklist-doctor.mjs (or equivalent) exists and can be invoked via `node scripts/tasklist-doctor.mjs`",
+    "Detects all 4 drift cases listed above and reports them in human + JSON formats",
+    "Exit codes: 0 (clean), 1 (drift detected, no error), 2 (read/parse errors)",
+    "Unit + integration tests cover each drift case",
+    "lib/README.md or similar documents the command"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:45:42.437Z",
+  "updated": "2026-05-02T02:45:42.437Z",
+  "id": "TASK-035"
+}

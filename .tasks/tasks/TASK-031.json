@@ -1,0 +1,23 @@
+{
+  "title": "Document merge-task JSON envelope schema",
+  "priority": "medium",
+  "effort": "S",
+  "tags": [
+    "docs",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-014"
+  ],
+  "description": "scripts/merge-task.mjs now emits a JSON envelope with 5+ structured keys: mergeSha, shardClose, linkedShardClose, commit, plus exitCode/source. Architect-reviewer flagged ARCH-N-016-8: consumers (orchestrator skill) currently parse this envelope by convention only — there is no schema definition.\n\nDocument the contract before sprint-4 adds a 6th key. Two acceptable approaches:\n(a) Add a TypeScript .d.ts in lib/ describing the envelope shape (no transpile needed; .d.ts is documentation-only for ESM JS).\n(b) Add a structured section to lib/README.md with field name, type, when-emitted, when-omitted, and example payloads.\n\nPrefer (b) unless the user wants editor IntelliSense (in which case do both — .d.ts emits hover hints in VS Code).",
+  "acceptance_criteria": [
+    "lib/README.md (or lib/merge-task-envelope.d.ts) documents the envelope shape including all of: mergeSha, shardClose, linkedShardClose, commit, exitCode, source",
+    "Each field is documented with: type, semantic meaning, when emitted vs omitted, and at least one example payload",
+    "Documentation is referenced from a comment block at the top of scripts/merge-task.mjs near the JSON.stringify emit point",
+    "No code change required; pure docs"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:44:34.521Z",
+  "updated": "2026-05-02T02:44:34.521Z",
+  "id": "TASK-031"
+}

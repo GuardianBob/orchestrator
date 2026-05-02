@@ -1,0 +1,24 @@
+{
+  "title": "Document tests/integration/ convention",
+  "priority": "low",
+  "effort": "XS",
+  "tags": [
+    "docs",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-015",
+    "TASK-016"
+  ],
+  "description": "tests/integration/ now contains 3 files (branch-setup.test.mjs, merge-task.test.mjs, silent-infinite-loop-regression.test.mjs). Architect-reviewer flagged ARCH-N-016-9: the convention is now load-bearing — pattern: tmp-repo fixture via mkdtempSync, spawnSync(process.execPath, [SCRIPT_PATH, ...]) with cwd: tmpRoot, per-repo git config (no --global), livingDocs:[] suppression, JSON.parse(stdout) with stderr-attached error messages, rebuildCmd config in fixture .orchestrator.json, afterEach rmSync with EBUSY tolerance.\n\nWrite tests/integration/README.md (one-paragraph + checklist) so future integration tests don't reinvent the harness. Reference TASK-015 + TASK-016 as canonical examples.",
+  "acceptance_criteria": [
+    "tests/integration/README.md exists",
+    "Documents the tmp-repo fixture pattern, spawnSync conventions, livingDocs:[] suppression, rebuildCmd usage, JSON envelope assertions, and EBUSY-tolerant cleanup",
+    "References merge-task.test.mjs and silent-infinite-loop-regression.test.mjs as canonical examples",
+    "Mentions the trade-off between subprocess (TASK-016) and hybrid (TASK-015) invocation strategies"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:44:49.259Z",
+  "updated": "2026-05-02T02:44:49.259Z",
+  "id": "TASK-032"
+}

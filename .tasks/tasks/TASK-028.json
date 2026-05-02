@@ -1,0 +1,24 @@
+{
+  "title": "Resolver: add per-shard status safety net + drift warning",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "bug",
+    "resilience",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-016"
+  ],
+  "description": "scripts/resolve-tasks.mjs:155 currently filters DONE_STATUSES on row.status (INDEX summary) only. After loading the shard at L174, it never re-checks shard.status. If npx tasklist-rebuild fails or is missing, a stale INDEX row keeps a done shard in the resolver queue → silent infinite loop. The TASK-016 regression test ships correctly because rebuildCmd repairs INDEX, but production resilience requires the safety net. Architect-reviewer flagged this as ARCH-W-016-4 (medium severity).\n\nFix: after the shard.json read at resolve-tasks.mjs:174, add `if (shard?.status && DONE_STATUSES.has(String(shard.status).toLowerCase())) { console.error(...); continue; }` with a loud stderr warning when shard.status disagrees with row.status (loud-detect, not silent-skip — the whole point of FEAT_FIXES.md Fix 3 is to catch rebuild failures, not paper over them).\n\nMust use task-id only in the warning message — NO absolute paths (avoid extending SEC-W-012-1 leak class to a new code path; security-auditor flagged this in TASK-016 review).\n\nRegression test: a new tests/integration/ scenario where rebuildCmd is INTENTIONALLY no-op (the original blueprint plan) — proves the safety net works even with stale INDEX, and asserts the stderr warning content.",
+  "acceptance_criteria": [
+    "scripts/resolve-tasks.mjs filters out shards with shard.status in {done, completed, archived, cancelled, closed} after loading the shard, in addition to the existing INDEX row.status filter",
+    "When INDEX row.status disagrees with shard.status (e.g., row says open but shard says done), a stderr warning is emitted naming the task-id, both statuses, and a remediation hint (e.g., 'run `npx tasklist-rebuild`'). NO absolute paths in the warning.",
+    "New integration test (tests/integration/resolver-shard-status-safety-net.test.mjs) uses no-op rebuildCmd, asserts queue is empty after a full cycle, and asserts the drift warning is present in stderr",
+    "All existing tests still pass (no regression in TASK-015 or TASK-016 scenarios)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:43:48.087Z",
+  "updated": "2026-05-02T02:43:48.087Z",
+  "id": "TASK-028"
+}

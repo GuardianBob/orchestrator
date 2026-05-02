@@ -1,0 +1,24 @@
+{
+  "title": "Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "security",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-012"
+  ],
+  "description": "SEC-W-012-1 (carryover from TASK-012 security audit, status `still-leaks-deferred` through TASK-016): raw e.message stderr concatenations in scripts/merge-task.mjs closePrimaryShardOnMerge at L127/134/148/167/536/560 leak filesystem paths to stderr. Security-auditor flagged in TASK-016 review: should be closed BEFORE TASK-028 adds new error sites at the resolver, otherwise the leak class amplifies.\n\nFix: downgrade raw e.message stderr concatenations to opaque tokens (e.g., `[merge-task] WARN: shard close failed for TASK-NNN (reason: <REASON_CONST>)`) or gate full e.message behind a DEBUG_MERGE_TASK env var. Use task-id and reason constants only; no abs paths.\n\nApply the same sanitization pattern to closeLinkedShardsOnMerge and commitShardDeltas — the leak class affects all three sibling helpers. Coordinate with TASK-028 so both produce sanitized warnings.",
+  "acceptance_criteria": [
+    "scripts/merge-task.mjs closePrimaryShardOnMerge stderr lines at L127/134/148/167/536/560 (current line numbers; track if shifted) no longer interpolate raw e.message",
+    "Same sanitization applied to closeLinkedShardsOnMerge and commitShardDeltas warning paths",
+    "DEBUG_MERGE_TASK=1 env var (or similar) restores full e.message for development debugging — opt-in only",
+    "Existing tests still pass (warning content tests must be updated to assert on sanitized format)",
+    "New unit test asserts that no warning emits an absolute path when DEBUG flag is unset"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:45:07.432Z",
+  "updated": "2026-05-02T02:45:07.432Z",
+  "id": "TASK-033"
+}

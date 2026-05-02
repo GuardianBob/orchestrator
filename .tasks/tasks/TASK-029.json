@@ -1,0 +1,25 @@
+{
+  "title": "Extract commitShardDeltas → lib/commit-shard-deltas.mjs",
+  "priority": "high",
+  "effort": "S",
+  "tags": [
+    "refactor",
+    "tech-debt",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-014"
+  ],
+  "description": "scripts/merge-task.mjs grew from ~624 LOC mid-sprint-3 to 671 LOC after TASK-014. Architect-reviewer flagged ARCH-W-016-1: at the 700-LOC sub-extraction threshold, momentum is one-way. The commitShardDeltas helper has clean run-injection seams already (TASK-014 review confirmed) and the three-sibling-helpers pattern (closePrimary / closeLinked / commitShardDeltas) is now system-validated by integration tests in TASK-015 + TASK-016 — so extraction is low-risk.\n\nMove commitShardDeltas + its registry-backed reason builders to lib/commit-shard-deltas.mjs. Keep the helper's API stable (same inputs, same return envelope shape — `{ committed, sha, reason, files, libraries }`). Update merge-task.mjs to import it. Add lib/README.md entry.",
+  "acceptance_criteria": [
+    "lib/commit-shard-deltas.mjs exists, exports commitShardDeltas with the same signature and return shape as the current scripts/merge-task.mjs implementation",
+    "scripts/merge-task.mjs imports commitShardDeltas from ../lib/commit-shard-deltas.mjs and contains no duplicate implementation",
+    "scripts/merge-task.mjs is below 600 LOC after extraction",
+    "lib/README.md documents the new module in the same style as existing entries",
+    "All 166 tests still pass (no behavior change); TASK-015 + TASK-016 integration tests validate the three-sibling pattern still works"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:44:04.601Z",
+  "updated": "2026-05-02T02:44:04.601Z",
+  "id": "TASK-029"
+}

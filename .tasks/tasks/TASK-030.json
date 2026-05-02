@@ -1,0 +1,24 @@
+{
+  "title": "Reasons registry: introduce family aggregates",
+  "priority": "medium",
+  "effort": "XS",
+  "tags": [
+    "refactor",
+    "tech-debt",
+    "sprint-3-followup"
+  ],
+  "depends_on": [
+    "TASK-027"
+  ],
+  "description": "lib/merge-task-reasons.mjs has grown to 26 exports (12 reason constants + 12 builders + 2 misc) — past the 25-builder soft threshold flagged in TASK-013/014/016 reviews. Architect-reviewer flagged ARCH-W-016-2 (low severity).\n\nIntroduce frozen family aggregates without breaking flat exports (additive, no migration needed):\n- REASON_CLOSE_FAMILY = Object.freeze({ ok: REASON_CLOSE_OK, alreadyDone: REASON_CLOSE_ALREADY_DONE, ... })\n- REASON_COMMIT_FAMILY = Object.freeze({ ok: REASON_COMMIT_OK, noChanges: REASON_COMMIT_NO_CHANGES, ... })\n- REASON_LINKED_FAMILY = Object.freeze({ ... })\n\nFamily aggregates enable downstream pattern-match dispatch (e.g., switch on family.ok vs family.failed) without forcing consumers to memorize 12 individual constant names. Flat exports remain for back-compat.",
+  "acceptance_criteria": [
+    "lib/merge-task-reasons.mjs exports REASON_CLOSE_FAMILY, REASON_COMMIT_FAMILY, REASON_LINKED_FAMILY as Object.freeze'd objects",
+    "All existing flat exports remain unchanged (no breaking change to consumers)",
+    "tests/unit/merge-task-reasons.test.mjs is extended with cases proving the families are frozen and contain the expected member constants",
+    "All 166 tests still pass"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:44:19.807Z",
+  "updated": "2026-05-02T02:44:19.807Z",
+  "id": "TASK-030"
+}

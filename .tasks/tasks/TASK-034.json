@@ -1,0 +1,20 @@
+{
+  "title": "Spike: programmatic lib/tasklist-rebuild.mjs API",
+  "priority": "medium",
+  "effort": "M",
+  "tags": [
+    "spike",
+    "design",
+    "sprint-3-followup"
+  ],
+  "description": "Architect-reviewer flagged ARCH-N-016-4: the existence of tests/fixtures/silent-loop-regression/fake-rebuild.mjs in test fixtures is a smell suggesting orchestrator could expose its own programmatic rebuild API. Currently rebuilds shell out to `npx tasklist-rebuild` from a sibling package (gen-tasklist plugin) — adds a runtime npm dependency, requires `rebuildCmd` config in fixtures, and prevents in-process testing.\n\nThis is a SPIKE to evaluate the design. Outputs:\n1. Survey: what does `npx tasklist-rebuild` actually do? (Walk the gen-tasklist source.)\n2. Boundary question: should orchestrator OWN rebuild, or remain a CONSUMER of gen-tasklist? (The lib boundary in the orchestrator project is small surface; gen-tasklist is the canonical home.)\n3. Hybrid option: lightweight in-process rebuild for tests + production still uses npx (tests get fast hermetic rebuild, production gets battle-tested gen-tasklist)\n4. Decision doc: ADR-style write-up with recommendation; if 'do it' then file follow-up implementation task.\n\nSecurity callout: any new programmatic rebuild API must use writeJsonAtomic (TOCTOU candidate per security-auditor flag), enforce validateShardId on caller-supplied IDs even though current call sites use fs.readdirSync output.",
+  "acceptance_criteria": [
+    "Decision doc at docs/adr/ADR-NNN-tasklist-rebuild-boundary.md (or similar) with: problem statement, options surveyed, trade-offs, recommendation",
+    "Recommendation is one of: (a) extract programmatic API to lib/, (b) keep npx-only and document, (c) hybrid (in-process for tests, npx for production)",
+    "If recommendation is (a) or (c), follow-up implementation task is filed with concrete acceptance criteria"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T02:45:27.022Z",
+  "updated": "2026-05-02T02:45:27.022Z",
+  "id": "TASK-034"
+}

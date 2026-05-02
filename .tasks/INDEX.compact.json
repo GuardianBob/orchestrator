@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T01:00:38.433Z",
-  "next_task_id": "TASK-028",
+  "updated": "2026-05-02T02:45:42.479Z",
+  "next_task_id": "TASK-036",
   "counts": {
-    "total": 27,
-    "backlog": 26,
+    "total": 35,
+    "backlog": 34,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 0,
     "cancelled": 0,
-    "open": 27,
+    "open": 35,
     "closed": 0,
     "archived": 0
   },
@@ -29,7 +29,7 @@
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 27,
+    "open_tasks": 35,
     "blocked_tasks": 0
   }
 }

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T01:00:38.433Z",
-  "next_task_id": "TASK-028",
+  "updated": "2026-05-02T02:45:42.479Z",
+  "next_task_id": "TASK-036",
   "previous_task": null,
   "current_task": {
     "id": "TASK-010",
@@ -327,24 +327,117 @@
         "refactor",
         "architectural-debt"
       ]
+    },
+    {
+      "id": "TASK-028",
+      "title": "Resolver: add per-shard status safety net + drift warning",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "bug",
+        "resilience",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-029",
+      "title": "Extract commitShardDeltas → lib/commit-shard-deltas.mjs",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "refactor",
+        "tech-debt",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-030",
+      "title": "Reasons registry: introduce family aggregates",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "medium",
+      "tags": [
+        "refactor",
+        "tech-debt",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-031",
+      "title": "Document merge-task JSON envelope schema",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "medium",
+      "tags": [
+        "docs",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-032",
+      "title": "Document tests/integration/ convention",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "docs",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-033",
+      "title": "Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "security",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-034",
+      "title": "Spike: programmatic lib/tasklist-rebuild.mjs API",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "medium",
+      "tags": [
+        "spike",
+        "design",
+        "sprint-3-followup"
+      ]
+    },
+    {
+      "id": "TASK-035",
+      "title": "tasklist-doctor: INDEX integrity check command",
+      "status": "backlog",
+      "effort": "M",
+      "priority": "low",
+      "tags": [
+        "feature",
+        "resilience",
+        "sprint-3-followup"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 27,
-    "backlog": 26,
+    "total": 35,
+    "backlog": 34,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 0,
     "cancelled": 0,
-    "open": 27,
+    "open": 35,
     "closed": 0,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 59,
+    "open_hours": 74,
     "closed_estimate_hours": 0,
     "closed_actual_hours": 0,
     "estimate_accuracy": null
