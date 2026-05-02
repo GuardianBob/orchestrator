@@ -18,7 +18,7 @@ export default defineConfig({
       // empty-test-set acceptance from TASK-001 still holds when
       // no test file exists. See TASK-006.
       thresholds: {
-        'scripts/shard-library.mjs': {
+        'lib/shard-library.mjs': {
           lines: 90,
           branches: 90,
           functions: 90,

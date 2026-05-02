@@ -25,3 +25,13 @@
 - [2026-05-01] Completed task-008: test(task-008): migrate snapshot tests to controlled fixture
 
 - [2026-05-01] Completed task-009: Add status flip to branch-setup.mjs
+
+- [2026-05-02] Completed task-012: Add primary-shard close to merge-task.mjs
+
+- [2026-05-02] Completed task-013: Add cross-library link closing to merge-task.mjs
+
+- [2026-05-02] Completed task-027: refactor(task-027): consolidate lib/, extract is-main, add reasons registry
+
+- [2026-05-02] Completed task-014: feat(orchestrator): TASK-014 commit shard deltas on merge
+
+- [2026-05-02] Completed task-015: test(orchestrator): TASK-015 integration test for merge-task workflow

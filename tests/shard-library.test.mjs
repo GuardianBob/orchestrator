@@ -1,6 +1,6 @@
 // tests/shard-library.test.mjs
 //
-// Unit tests for scripts/shard-library.mjs — covers all 6 public APIs
+// Unit tests for lib/shard-library.mjs — covers all 6 public APIs
 // (loadLibraries, locateShard, updateShard, rebuildLibrary,
 //  resolveStatusVocab, scanLinks). The 3 error classes are tested
 // implicitly via thrown errors. __resetCache is used as test
@@ -30,7 +30,7 @@ import {
   ShardNotFoundError,
   ShardValidationError,
   __resetCache,
-} from '../scripts/shard-library.mjs';
+} from '../lib/shard-library.mjs';
 
 // ---------------------------------------------------------------------------
 // Path helpers (no string concat — LD-XPL-001)
