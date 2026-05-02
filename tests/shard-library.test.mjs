@@ -527,6 +527,34 @@ describe('resolveStatusVocab', () => {
     expect(c).toEqual({ start: 'X', done: 'Y' });
     expect(c).not.toBe(a);
   });
+
+  // TASK-026 — error.code discriminator (vocab-error: prefix)
+  it('tags ambiguous start vocab errors with code "vocab-error:ambiguous-start"', () => {
+    const dir = makeTmpDir('amb-code');
+    const schemaPath = path.join(dir, 'amb.schema.json');
+    fs.writeFileSync(schemaPath, JSON.stringify({
+      properties: { status: { enum: ['backlog', 'in-progress', 'active', 'done'] } },
+    }));
+    const lib = tasksLibrary({ schemaPath });
+    try {
+      resolveStatusVocab(lib);
+      throw new Error('expected throw');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ShardLibraryError);
+      expect(e.code).toBe('vocab-error:ambiguous-start');
+    }
+  });
+
+  it('tags partial statusMap errors with code "vocab-error:statusmap-partial"', () => {
+    const lib = tasksLibrary({ statusMap: { start: 'doing' } });
+    try {
+      resolveStatusVocab(lib);
+      throw new Error('expected throw');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ShardLibraryError);
+      expect(e.code).toBe('vocab-error:statusmap-partial');
+    }
+  });
 });
 
 // ===========================================================================

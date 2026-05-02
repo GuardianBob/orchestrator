@@ -12,7 +12,7 @@
 //   3  CLI usage error (missing flag value)
 //   4  shard already at vocab.done — refusing to start
 //   5  config error (loadLibraries threw — bad shardLibraries[] / no primary)
-//   6  shard write/IO failure mid-flip (branch still exists)
+//   6  shard write/IO failure mid-flip OR vocab/validation failure (branch still exists)
 //   1  any other unexpected error
 
 import { execSync } from 'node:child_process';
@@ -221,12 +221,14 @@ export function flipPrimaryShardStatus(libraries, taskId, opts = {}) {
 async function handleCollisionAtStart(ctx) {
   const { libraries, taskId, args, sprintBranch, taskBranch, baseBranch } = ctx;
   // Test escape hatch (LD-CI-* — deterministic interactive simulation):
-  //   BRANCH_SETUP_FORCE_INTERACTIVE=1 forces isInteractive=true regardless of
-  //   the stdin TTY state. Used by tests/integration/branch-setup.test.mjs to
-  //   exercise the prompt loop via piped stdin (Node has no built-in pty).
-  //   Production callers never set this env var.
+  //   BRANCH_SETUP_TEST_FORCE_INTERACTIVE=1 forces isInteractive=true
+  //   regardless of stdin TTY state. Used by tests/integration/branch-setup
+  //   .test.mjs to exercise the prompt loop via piped stdin (Node has no
+  //   built-in pty). Inert when NODE_ENV === 'production' — defense-in-depth
+  //   so a stray env var in prod can never bypass the TTY check.
   const ttyOk = process.stdin.isTTY === true
-    || process.env.BRANCH_SETUP_FORCE_INTERACTIVE === '1';
+    || (process.env.NODE_ENV !== 'production'
+        && process.env.BRANCH_SETUP_TEST_FORCE_INTERACTIVE === '1');
   const isInteractive = ttyOk && !args['non-interactive'];
   const primary = libraries.find((l) => l && l.primary === true);
   const shardPath = primary ? locateShard(primary, taskId) : null;
@@ -386,6 +388,20 @@ async function main() {
   // ─── SAFE POINT: branch is live; flip is best-effort below ─────────────────
 
   const taskId = deriveTaskId(args.task);
+
+  // Local helper: emits the canonical envelope to stdout and exits.
+  // Captures sprintBranch/taskBranch/baseBranch from the enclosing scope
+  // and the live `git branch --show-current` so envelope is always coherent.
+  const emitEnvelopeAndExit = ({ reason, msg, exit, label }) => {
+    process.stderr.write(`[branch-setup] ${label}: ${msg}\n`);
+    console.log(JSON.stringify(
+      { sprintBranch, taskBranch, baseBranch,
+        current: sh('git branch --show-current'),
+        statusFlip: { flipped: false, reason } },
+      null, 2));
+    process.exit(exit);
+  };
+
   let statusFlip;
   try {
     statusFlip = flipPrimaryShardStatus(libraries, taskId, {
@@ -393,17 +409,18 @@ async function main() {
       skipRebuild: args['no-rebuild'],
     });
   } catch (e) {
-    if (e instanceof ShardValidationError) {
-      process.stderr.write(`[branch-setup] shard validation error: ${e.message}\n`);
-      statusFlip = { flipped: false, reason: `validation-error:${e.message}` };
+    if (e instanceof ShardLibraryError && typeof e.code === 'string' && e.code.startsWith('vocab-error:')) {
+      emitEnvelopeAndExit({ reason: e.code, msg: e.message, exit: 6, label: 'vocab error' });
+    } else if (e instanceof ShardValidationError) {
+      const reason = (typeof e.code === 'string' && e.code.startsWith('validation-error:'))
+        ? e.code
+        : `validation-error:${e.message}`;
+      emitEnvelopeAndExit({ reason, msg: e.message, exit: 6, label: 'shard validation error' });
     } else if (e instanceof ShardLibraryError) {
-      process.stderr.write(`[branch-setup] shard write error: ${e.message}\n`);
-      console.log(JSON.stringify(
-        { sprintBranch, taskBranch, baseBranch,
-          current: sh('git branch --show-current'),
-          statusFlip: { flipped: false, reason: `io-error:${e.message}` } },
-        null, 2));
-      process.exit(6);
+      const reason = (typeof e.code === 'string' && e.code.startsWith('io-error:'))
+        ? e.code
+        : `io-error:${e.message}`;
+      emitEnvelopeAndExit({ reason, msg: e.message, exit: 6, label: 'shard write error' });
     } else {
       throw e;
     }
@@ -440,8 +457,6 @@ async function main() {
         process.stderr.write(
           `[branch-setup] shard ${taskId} at unexpected status; skipping flip (not in startable bucket)\n`
         );
-      } else if (statusFlip.reason && statusFlip.reason.startsWith('validation-error:')) {
-        // already logged above
       } else {
         process.stderr.write(`[branch-setup] flip skipped: ${statusFlip.reason}\n`);
       }

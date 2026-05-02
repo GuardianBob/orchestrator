@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-01T22:36:28.000Z",
-  "next_task_id": "TASK-026",
+  "updated": "2026-05-01T23:40:37.235Z",
+  "next_task_id": "TASK-027",
   "previous_task": null,
   "current_task": {
     "id": "TASK-010",
@@ -304,24 +304,35 @@
         "security",
         "sprint-1-followup"
       ]
+    },
+    {
+      "id": "TASK-026",
+      "title": "Sprint-2 hardening: error envelope + backdoor namespace",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "medium",
+      "tags": [
+        "hardening",
+        "sprint-shard-b-followup"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 25,
-    "backlog": 24,
+    "total": 26,
+    "backlog": 25,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 0,
     "cancelled": 0,
-    "open": 25,
+    "open": 26,
     "closed": 0,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 53.5,
+    "open_hours": 55,
     "closed_estimate_hours": 0,
     "closed_actual_hours": 0,
     "estimate_accuracy": null
