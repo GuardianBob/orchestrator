@@ -12,6 +12,12 @@ A reusable, project-agnostic build → review → merge → next-task system for
 6. If gates fail → loop back to builders with findings (up to `maxRetries`), then desktop notification.
 7. When sprint queue empties → notify and **wait for human approval** before merging sprint→main.
 
+### Highlights
+
+- **Multi-library shard support** — pull tasks from one or more shard libraries (`gen-tasklist`, `gen-issues`, or any custom `INDEX.json` + per-shard `.json` layout) in a single orchestration loop.
+- **Automatic status write-back** — on every successful merge, the resolved task's per-shard JSON is flipped to its library's `done` status (heuristic-detected from each library's schema, or operator-overridden via `statusMap`).
+- **Cross-library link closure** — if a primary task references secondary IDs (e.g. `resolves: ["ISSUE-42"]` or "fixes ISSUE-42" in the description), those linked shards are closed in the same merge step with a `Resolved by <taskId> @ <sha>` note. Idempotent and never blocks the merge.
+
 ## Files
 
 | Path | Purpose |
@@ -70,43 +76,66 @@ First run in a project auto-creates `.orchestrator.json` with detected commands.
 
 ## Per-project config (`.orchestrator.json`)
 
+Minimal viable config — single primary library, defaults for everything else:
+
+```json
+{
+  "branchPrefix": "sprint",
+  "builderAgents": [{ "role": "coder", "agent": "fullstack-developer" }],
+  "reviewerAgents": [{ "role": "code-review", "agent": "code-reviewer" }],
+  "commands": { "test": "npm test", "lint": null, "build": null },
+  "shardLibraries": [
+    {
+      "id": "tasks",
+      "indexPath": ".tasks/INDEX.json",
+      "shardDir": ".tasks/tasks",
+      "primary": true,
+      "rebuildCmd": "npx tasklist-rebuild"
+    }
+  ]
+}
+```
+
+Set `commands.*` to `null` to skip that gate. Any agent name from your global agents folder is valid. Full schema (with `livingDocs`, `mergeStrategy`, `notifications`, `statusMap`, `linkField`, etc.) lives in `templates/orchestrator.json` and `skill/SKILL.md` § Configuration reference.
+
+### Multi-library example
+
+Use this pattern when your project tracks both engineering tasks and bug/issue shards in parallel — e.g. `gen-tasklist` for `.tasks/` plus `gen-issues` for `.issues/`. The primary library drives the queue; the secondary library is auto-closed on merge whenever a task explicitly references one of its IDs (via `linkField`) or mentions it with a closing keyword like `fixes ISSUE-42`.
+
 ```json
 {
   "branchPrefix": "sprint",
   "builderAgents": [
-    { "role": "architect", "agent": "code-architect" },
-    { "role": "coder",     "agent": "fullstack-developer" },
-    { "role": "tester",    "agent": "test-automator", "parallel": true }
+    { "role": "coder", "agent": "fullstack-developer" },
+    { "role": "tester", "agent": "test-automator", "parallel": true }
   ],
   "reviewerAgents": [
-    { "role": "code-review", "agent": "code-reviewer" },
-    { "role": "security",    "agent": "security-auditor" }
+    { "role": "code-review", "agent": "code-reviewer" }
   ],
-  "maxRetries": 2,
-  "commands": {
-    "test":  "npm test",
-    "lint":  "npm run lint",
-    "build": "npm run build"
-  },
-  "tasksSource": {
-    "primary": "TASKLIST.md",
-    "phasePattern": "PHASE_*_PLAN.md",
-    "fallback": "github"
-  },
-  "livingDocs": [
-    "MEMORY.md", "STATUS_SUMMARY.md", "GIT_COMMITS.md",
-    "REVIEW_LOG.md", "TASKLIST.md", "ADVENTURES_IN_CODING.md"
-  ],
-  "mergeStrategy": "no-ff",
-  "notifications": {
-    "progress": "silent",
-    "approval": "toast",
-    "blocked": "toast"
-  }
+  "commands": { "test": "npm test", "lint": "npm run lint", "build": null },
+  "shardLibraries": [
+    {
+      "id": "tasks",
+      "indexPath": ".tasks/INDEX.json",
+      "shardDir": ".tasks/tasks",
+      "schemaPath": ".tasks/schemas/task.schema.json",
+      "linkField": "resolves",
+      "primary": true,
+      "rebuildCmd": "npx tasklist-rebuild"
+    },
+    {
+      "id": "issues",
+      "indexPath": ".issues/INDEX.json",
+      "shardDir": ".issues/issues",
+      "statusMap": { "start": "in-progress", "done": "resolved" },
+      "primary": false,
+      "rebuildCmd": "npx issuelist-rebuild"
+    }
+  ]
 }
 ```
 
-Set `commands.*` to `null` to skip that gate. Any agent name from your global agents folder is valid.
+Exactly one entry must set `primary: true`. The `tasks` entry resolves its `start`/`done` vocab from its schema enum; `issues` overrides it explicitly because `resolved` doesn't match the default heuristic. All paths resolve relative to `.orchestrator.json`.
 
 ## Task list format
 
