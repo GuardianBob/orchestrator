@@ -10,8 +10,29 @@ import {
   rebuildLibrary,
   resolveStatusVocab,
   scanLinks,
-} from './shard-library.mjs';
-import { normalizeTaskId } from './lib/task-id.mjs';
+} from '../lib/shard-library.mjs';
+import { normalizeTaskId } from '../lib/task-id.mjs';
+import { isMain } from '../lib/is-main.mjs';
+import {
+  REASON_NO_PRIMARY,
+  REASON_SHARD_NOT_FOUND,
+  REASON_IO_ERROR_READ,
+  REASON_ALREADY_DONE,
+  REASON_CLOSED,
+  REASON_UNKNOWN_LIBRARY,
+  REASON_NOT_ATTEMPTED,
+  REASON_SKIPPED_NO_CHANGES,
+  REASON_PRIMARY_SHARD_MISSING,
+  reasonVocabError,
+  reasonLocateError,
+  reasonUpdateFailed,
+  reasonIoError,
+  reasonReloadError,
+  reasonScanlinksFailed,
+  reasonRebuildFailed,
+  reasonConfigError,
+  reasonUncaught,
+} from '../lib/merge-task-reasons.mjs';
 
 // ---------------------------------------------------------------------------
 // Pure mutator — exported so TASK-015 can import-and-test directly.
@@ -90,28 +111,28 @@ export function buildLinkedClosedShard(current, vocab, nowIso, noteEntry, taskId
 export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, mergeSha,
                                            now = () => new Date().toISOString() }) {
   if (!Array.isArray(libraries) || libraries.length === 0)
-    return { closed: false, reason: 'no-primary' };
+    return { closed: false, reason: REASON_NO_PRIMARY };
   const primary = libraries.find((l) => l && l.primary === true);
-  if (!primary) return { closed: false, reason: 'no-primary' };
+  if (!primary) return { closed: false, reason: REASON_NO_PRIMARY };
 
   let vocab;
   try { vocab = resolveStatusVocab(primary); }
   catch (e) {
     process.stderr.write(`[merge-task] vocab error (${e.code || 'vocab'}): ${e.message}\n`);
-    return { closed: false, reason: `vocab-error:${e.code || 'unknown'}` };
+    return { closed: false, reason: reasonVocabError(e.code || 'unknown') };
   }
 
   let shardPath;
   try { shardPath = locateShard(primary, taskId); }
   catch (e) {
     process.stderr.write(`[merge-task] locate failed (${e.code || e.name}): ${e.message}\n`);
-    return { closed: false, reason: `locate-error:${e.code || e.name}` };
+    return { closed: false, reason: reasonLocateError(e.code || e.name) };
   }
   if (shardPath === null) {
     process.stderr.write(
       `[merge-task] merge succeeded but task shard ${taskId} not found in library '${primary.id}' — skipping shard-close\n`
     );
-    return { closed: false, reason: 'shard-not-found' };
+    return { closed: false, reason: REASON_SHARD_NOT_FOUND };
   }
 
   // Idempotency check — read current shard cheaply before attempting any write.
@@ -119,11 +140,11 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
   try { current = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
   catch (e) {
     process.stderr.write(`[merge-task] shard read failed: ${e.message}\n`);
-    return { closed: false, reason: 'io-error:read' };
+    return { closed: false, reason: REASON_IO_ERROR_READ };
   }
   if (current.status === vocab.done) {
     process.stderr.write(`[merge-task] ${taskId} already at status=${vocab.done}; skipping close\n`);
-    return { closed: false, reason: 'already-done' };
+    return { closed: false, reason: REASON_ALREADY_DONE };
   }
 
   const nowIso = now();
@@ -138,7 +159,7 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
     // a `code` discriminator. Atomic write means the shard is either fully
     // old or fully new — never half-written (LD-PAT-002).
     process.stderr.write(`[merge-task] shard close failed (${e.code || e.name}): ${e.message}\n`);
-    return { closed: false, reason: `update-failed:${e.code || e.name}` };
+    return { closed: false, reason: reasonUpdateFailed(e.code || e.name) };
   }
 
   // Rebuild — already resilient (returns {ok,reason}; never throws per its contract).
@@ -151,7 +172,7 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
 
   return {
     closed: true,
-    reason: 'closed',
+    reason: REASON_CLOSED,
     status: vocab.done,
     completed: nowIso,
     sha: shortSha,
@@ -205,13 +226,13 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
     const primaryPath = locateShard(primary, taskId);
     if (primaryPath === null) {
       log(`[merge-task] linked-close: primary shard '${taskId}' missing post-merge; skipping linked-close\n`);
-      aggregate.scanError = 'primary-shard-missing';
+      aggregate.scanError = REASON_PRIMARY_SHARD_MISSING;
       return aggregate;
     }
     taskShard = JSON.parse(fs.readFileSync(primaryPath, 'utf8'));
   } catch (e) {
     log(`[merge-task] linked-close: primary re-load failed (${e.code || e.name})\n`);
-    aggregate.scanError = `reload-error:${e.code || e.name}`;
+    aggregate.scanError = reasonReloadError(e.code || e.name);
     return aggregate;
   }
 
@@ -220,7 +241,7 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
     linkMap = scanLinks(taskShard, libraries);
   } catch (e) {
     log(`[merge-task] linked-close: scanLinks failed (${e.code || e.name})\n`);
-    aggregate.scanError = `scanlinks-failed:${e.code || e.name}`;
+    aggregate.scanError = reasonScanlinksFailed(e.code || e.name);
     return aggregate;
   }
 
@@ -232,7 +253,7 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
         libraryId: libId,
         closedIds: [],
         skippedIds: [],
-        failures: [{ id: '*', reason: 'unknown-library' }],
+        failures: [{ id: '*', reason: REASON_UNKNOWN_LIBRARY }],
         rebuilt: null,
       });
       aggregate.failures += 1;
@@ -247,7 +268,7 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
         libraryId: libId,
         closedIds: [],
         skippedIds: [],
-        failures: [{ id: '*', reason: `vocab-error:${e.code || 'unknown'}` }],
+        failures: [{ id: '*', reason: reasonVocabError(e.code || 'unknown') }],
         rebuilt: null,
       });
       aggregate.failures += 1;
@@ -268,13 +289,13 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
       try { shardPath = locateShard(library, id); }
       catch (e) {
         log(`[merge-task] linked-close: locate failed for '${libId}/${id}' (${e.code || e.name})\n`);
-        perLib.failures.push({ id, reason: `locate-error:${e.code || e.name}` });
+        perLib.failures.push({ id, reason: reasonLocateError(e.code || e.name) });
         aggregate.failures += 1;
         continue;
       }
       if (shardPath === null) {
         log(`[merge-task] linked-close: shard '${libId}/${id}' not found in INDEX; skipping (AC #4)\n`);
-        perLib.skippedIds.push({ id, reason: 'shard-not-found' });
+        perLib.skippedIds.push({ id, reason: REASON_SHARD_NOT_FOUND });
         aggregate.skipped += 1;
         continue;
       }
@@ -283,12 +304,12 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
       try { current = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
       catch (e) {
         log(`[merge-task] linked-close: read failed for '${libId}/${id}' (${e.code || 'io'})\n`);
-        perLib.failures.push({ id, reason: `io-error:${e.code || 'read'}` });
+        perLib.failures.push({ id, reason: reasonIoError(e.code || 'read') });
         aggregate.failures += 1;
         continue;
       }
       if (current.status === vocab.done) {
-        perLib.skippedIds.push({ id, reason: 'already-done' });
+        perLib.skippedIds.push({ id, reason: REASON_ALREADY_DONE });
         aggregate.skipped += 1;
         continue;
       }
@@ -304,7 +325,7 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
         aggregate.closed += 1;
       } catch (e) {
         log(`[merge-task] linked-close: update failed for '${libId}/${id}' (${e.code || e.name})\n`);
-        perLib.failures.push({ id, reason: `update-failed:${e.code || e.name}` });
+        perLib.failures.push({ id, reason: reasonUpdateFailed(e.code || e.name) });
         aggregate.failures += 1;
         // continue — atomic write means shard is whole-old or whole-new
       }
@@ -317,12 +338,12 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
       perLib.rebuilt = rebuildLibrary(library);          // {ok, reason}; never throws
       if (!perLib.rebuilt.ok) {
         log(`[merge-task] linked-close: rebuild failed for '${libId}' (${perLib.rebuilt.reason})\n`);
-        perLib.failures.push({ id: '*', reason: `rebuild-failed:${perLib.rebuilt.reason}` });
+        perLib.failures.push({ id: '*', reason: reasonRebuildFailed(perLib.rebuilt.reason) });
         // failures counter not bumped: rebuild is a library-level event,
         // aggregate counters track shard-level events.
       }
     } else {
-      perLib.rebuilt = { ok: true, reason: 'skipped-no-changes' };
+      perLib.rebuilt = { ok: true, reason: REASON_SKIPPED_NO_CHANGES };
     }
 
     aggregate.perLibrary.push(perLib);
@@ -335,19 +356,7 @@ export function closeLinkedShardsOnMerge({ libraries, primary, taskId, mergeSha,
 // CLI entry — only runs when executed directly (not when imported by tests).
 // ---------------------------------------------------------------------------
 
-const isDirectInvocation = (() => {
-  try {
-    const invoked = process.argv[1] ? path.resolve(process.argv[1]) : null;
-    const self = new URL(import.meta.url).pathname;
-    // On Windows, URL pathname has leading slash like /C:/...; normalize via path.resolve.
-    const selfResolved = path.resolve(self.replace(/^\/([A-Za-z]:)/, '$1'));
-    return invoked !== null && invoked === selfResolved;
-  } catch {
-    return true;
-  }
-})();
-
-if (isDirectInvocation) {
+if (isMain(import.meta.url)) {
   const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => {
     if (v.startsWith('--')) a.push([v.slice(2), arr[i + 1]]);
     return a;
@@ -400,9 +409,9 @@ if (isDirectInvocation) {
   const mergeSha = shSafe('git rev-parse HEAD') || '';
 
   // Close primary-library shard. Best-effort: never blocks living-docs commit.
-  let shardClose = { closed: false, reason: 'not-attempted' };
+  let shardClose = { closed: false, reason: REASON_NOT_ATTEMPTED };
   // Uniform shape: linkedShardClose always present in stdout (W1 carryover).
-  let linkedShardClose = { closed: 0, skipped: 0, failures: 0, perLibrary: [], reason: 'not-attempted' };
+  let linkedShardClose = { closed: 0, skipped: 0, failures: 0, perLibrary: [], reason: REASON_NOT_ATTEMPTED };
   let libraries = null;
   let primaryLib = null;
   try {
@@ -417,7 +426,7 @@ if (isDirectInvocation) {
   } catch (e) {
     // loadLibraries is the only outer-throw path (config error). Warn + continue.
     process.stderr.write(`[merge-task] shard-close skipped: ${e.message}\n`);
-    shardClose = { closed: false, reason: `config-error:${e.code || 'unknown'}` };
+    shardClose = { closed: false, reason: reasonConfigError(e.code || 'unknown') };
   }
 
   // Cross-library linked-shard close (TASK-013). Only attempt if primary close
@@ -434,7 +443,7 @@ if (isDirectInvocation) {
       // closeLinkedShardsOnMerge is best-effort and should not throw, but
       // belt-and-suspenders: warn-and-continue using opaque .code only.
       process.stderr.write(`[merge-task] linked-close uncaught (${e.code || e.name})\n`);
-      linkedShardClose = { closed: 0, skipped: 0, failures: 0, perLibrary: [], reason: `uncaught:${e.code || e.name}` };
+      linkedShardClose = { closed: 0, skipped: 0, failures: 0, perLibrary: [], reason: reasonUncaught(e.code || e.name) };
     }
   }
 

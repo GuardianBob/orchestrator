@@ -26,7 +26,7 @@ vi.mock('node:fs', async () => {
   };
 });
 
-vi.mock('../../scripts/shard-library.mjs', () => ({
+vi.mock('../../lib/shard-library.mjs', () => ({
   scanLinks: vi.fn(),
   locateShard: vi.fn(),
   updateShard: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock('../../scripts/shard-library.mjs', () => ({
 }));
 
 const fs = await import('node:fs');
-const shardLib = await import('../../scripts/shard-library.mjs');
+const shardLib = await import('../../lib/shard-library.mjs');
 const { closeLinkedShardsOnMerge } = await import('../../scripts/merge-task.mjs');
 
 const PRIMARY_SHARD = { id: 'TASK-013', resolves: ['ISSUE-1', 'ISSUE-2'], description: '' };

@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { ShardLibraryError, loadLibraries, locateShard } from './shard-library.mjs';
+import { ShardLibraryError, loadLibraries, locateShard } from '../lib/shard-library.mjs';
 
 const argv = process.argv.slice(2);
 const flagIdx = argv.indexOf('--target');
