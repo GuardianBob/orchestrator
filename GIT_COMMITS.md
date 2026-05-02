@@ -22,3 +22,6 @@ feat(task-029): Extract commitShardDeltas to lib/commit-shard-deltas.mjs
 
 ## 2026-05-02 `80efad0` sprint-4-task-033-sanitize-stderr-close-primary-shard
 feat(task-033): Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)
+
+## 2026-05-02 `fa6459d` sprint-5-task-017-rewrite-skill-md-config
+feat(task-017): Rewrite skill/SKILL.md Configuration section + add Shard Library Integration
