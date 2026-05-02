@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T04:20:11.007Z",
+  "updated": "2026-05-02T04:33:07.956Z",
   "next_task_id": "TASK-037",
   "previous_task": {
-    "id": "TASK-028",
-    "title": "Resolver: add per-shard status safety net + drift warning",
+    "id": "TASK-036",
+    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
     "status": "done",
     "effort": "S",
-    "completed": "2026-05-02T04:17:55Z"
+    "completed": "2026-05-02T04:33:01Z"
   },
   "current_task": {
     "id": "TASK-010",
@@ -391,39 +391,26 @@
         "resilience",
         "sprint-3-followup"
       ]
-    },
-    {
-      "id": "TASK-036",
-      "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "security",
-        "sanitization",
-        "sprint-4",
-        "sprint-3-followup"
-      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
     "total": 36,
-    "backlog": 32,
+    "backlog": 31,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
-    "done": 3,
+    "done": 4,
     "cancelled": 0,
-    "open": 33,
-    "closed": 3,
+    "open": 32,
+    "closed": 4,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 71,
-    "closed_estimate_hours": 4.5,
-    "closed_actual_hours": 4.5,
+    "open_hours": 69.5,
+    "closed_estimate_hours": 6,
+    "closed_actual_hours": 6,
     "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"

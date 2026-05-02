@@ -20,8 +20,10 @@
   "depends_on": [
     "TASK-033"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-02T04:20:10.947Z",
-  "updated": "2026-05-02T04:20:10.947Z",
-  "id": "TASK-036"
+  "updated": "2026-05-02T04:33:01Z",
+  "id": "TASK-036",
+  "completed": "2026-05-02T04:33:01Z",
+  "notes": "2026-05-02 — Merged into sprint-4 (8aa1bbb). Wrapped 7 stderr e.message sites: branch-setup.mjs (3), resolve-tasks.mjs (3), merge-sprint.mjs (1, scope-expanded mid-review). +2 net LOC across 3 files. Tests 187/187. SEC-W-012-1 fully closed across project. All 3 reviewers approve; security-auditor sec_w_012_1_closed=true."
 }
