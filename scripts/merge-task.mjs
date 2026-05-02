@@ -35,6 +35,7 @@ import {
   reasonUncaught,
 } from '../lib/merge-task-reasons.mjs';
 import { commitShardDeltas } from '../lib/commit-shard-deltas.mjs';
+import { sanitizeErrorMessage } from '../lib/sanitize-error.mjs';
 
 // ---------------------------------------------------------------------------
 // Pure mutator — exported so TASK-015 can import-and-test directly.
@@ -120,14 +121,14 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
   let vocab;
   try { vocab = resolveStatusVocab(primary); }
   catch (e) {
-    process.stderr.write(`[merge-task] vocab error (${e.code || 'vocab'}): ${e.message}\n`);
+    process.stderr.write(`[merge-task] vocab error (${e.code || 'vocab'}): ${sanitizeErrorMessage(e)}\n`);
     return { closed: false, reason: reasonVocabError(e.code || 'unknown') };
   }
 
   let shardPath;
   try { shardPath = locateShard(primary, taskId); }
   catch (e) {
-    process.stderr.write(`[merge-task] locate failed (${e.code || e.name}): ${e.message}\n`);
+    process.stderr.write(`[merge-task] locate failed (${e.code || e.name}): ${sanitizeErrorMessage(e)}\n`);
     return { closed: false, reason: reasonLocateError(e.code || e.name) };
   }
   if (shardPath === null) {
@@ -141,7 +142,7 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
   let current;
   try { current = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
   catch (e) {
-    process.stderr.write(`[merge-task] shard read failed: ${e.message}\n`);
+    process.stderr.write(`[merge-task] shard read failed: ${sanitizeErrorMessage(e)}\n`);
     return { closed: false, reason: REASON_IO_ERROR_READ };
   }
   if (current.status === vocab.done) {
@@ -160,7 +161,7 @@ export function closePrimaryShardOnMerge({ libraries, taskId, sprintBranch, merg
     // ShardNotFoundError / ShardValidationError / ShardLibraryError all share
     // a `code` discriminator. Atomic write means the shard is either fully
     // old or fully new — never half-written (LD-PAT-002).
-    process.stderr.write(`[merge-task] shard close failed (${e.code || e.name}): ${e.message}\n`);
+    process.stderr.write(`[merge-task] shard close failed (${e.code || e.name}): ${sanitizeErrorMessage(e)}\n`);
     return { closed: false, reason: reasonUpdateFailed(e.code || e.name) };
   }
 
@@ -404,7 +405,7 @@ if (isMain(import.meta.url)) {
   try {
     sh(`git merge ${mergeStrategy} ${taskBranch} -m "merge(task-${args.task}): into ${sprintBranch}"`);
   } catch (e) {
-    console.error(JSON.stringify({ error: 'merge failed', detail: e.message.slice(0, 500) }));
+    console.error(JSON.stringify({ error: 'merge failed', detail: sanitizeErrorMessage(e) }));
     process.exit(2);
   }
 
@@ -428,7 +429,7 @@ if (isMain(import.meta.url)) {
     });
   } catch (e) {
     // loadLibraries is the only outer-throw path (config error). Warn + continue.
-    process.stderr.write(`[merge-task] shard-close skipped: ${e.message}\n`);
+    process.stderr.write(`[merge-task] shard-close skipped: ${sanitizeErrorMessage(e)}\n`);
     shardClose = { closed: false, reason: reasonConfigError(e.code || 'unknown') };
   }
 
