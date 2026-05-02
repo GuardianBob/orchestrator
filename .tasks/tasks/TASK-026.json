@@ -1,0 +1,26 @@
+{
+  "title": "Sprint-2 hardening: error envelope + backdoor namespace",
+  "effort": "S",
+  "priority": "medium",
+  "tags": [
+    "hardening",
+    "sprint-shard-b-followup"
+  ],
+  "description": "Close 3 non-blocking debts flagged by sprint-2 reviewers before main promotion:\n\n1. Wrap resolveStatusVocab ambiguous-vocab throw in branch-setup main() try/catch so it emits the standard JSON error envelope (reason: vocab-error:ambiguous) + exit 6 instead of bubbling raw stack to stderr. Surfaced by TASK-009 architect-reviewer attempt-1.\n\n2. Normalize ShardValidationError vs ShardLibraryError handling in branch-setup main(). Currently asymmetric: ShardValidationError is treated as soft (continue), ShardLibraryError as hard (exit). Both should be hard exits with envelope (validation = exit 6, IO = exit 6) for predictable operator UX. Surfaced by TASK-009 architect-reviewer attempt-1.\n\n3. Rename BRANCH_SETUP_FORCE_INTERACTIVE env var to BRANCH_SETUP_TEST_FORCE_INTERACTIVE and gate on (NODE_ENV !== \"production\") to make the test-only intent explicit. Update the 1 test reference in tests/integration/branch-setup.test.mjs accordingly. Surfaced by TASK-011 security-auditor attempt-1.",
+  "acceptance_criteria": [
+    "branch-setup.mjs main() catches resolveStatusVocab throw, emits JSON envelope with reason starting vocab-error: and exit code 6",
+    "ShardValidationError now causes exit 6 (matching ShardLibraryError); both paths emit JSON envelope with reason validation-error: or io-error: prefix respectively",
+    "Env var renamed to BRANCH_SETUP_TEST_FORCE_INTERACTIVE; production guard NODE_ENV !== production added; test file updated; comment block updated",
+    "Existing 116 tests still pass; add 2-3 new tests covering the envelope-on-vocab-throw path",
+    "No regression in TASK-009/010/011 behavior"
+  ],
+  "depends_on": [
+    "TASK-009",
+    "TASK-010",
+    "TASK-011"
+  ],
+  "status": "backlog",
+  "created": "2026-05-01T23:40:36.615Z",
+  "updated": "2026-05-01T23:40:36.615Z",
+  "id": "TASK-026"
+}

@@ -1,8 +1,9 @@
 # Memory
 
-next_task_id: 9
+next_task_id: 10
 
 ## recent_changes
+- [2026-05-01] task-009 merged → sprint-2
 - [2026-05-01] sprint-1 complete: shard-library read-path landed (10 exports, 6 public APIs); load-config + resolve-tasks migrated; 80 tests passing (98% cov on shard-library); write-path deferred to sprint-2 (branch-setup) and sprint-3 (merge-task)
 - [2026-05-01] task-008 merged → sprint-1
 - [2026-05-01] task-007 merged → sprint-1

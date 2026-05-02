@@ -30,14 +30,22 @@ import { execSync } from 'node:child_process';
 // Typed errors
 // ---------------------------------------------------------------------------
 
+// `code` is an optional discriminator string (e.g. 'vocab-error:ambiguous',
+// 'io-error:read', 'validation-error:missing-field') that lets CLI catch
+// arms route on a stable identifier instead of message-substring matching.
+// Defaults to null when not set; consumers MUST treat it as optional.
 export class ShardLibraryError extends Error {
-  constructor(msg) { super(msg); this.name = 'ShardLibraryError'; }
+  constructor(msg, code = null) {
+    super(msg);
+    this.name = 'ShardLibraryError';
+    this.code = code;
+  }
 }
 export class ShardNotFoundError extends ShardLibraryError {
-  constructor(msg) { super(msg); this.name = 'ShardNotFoundError'; }
+  constructor(msg, code = 'io-error:not-found') { super(msg, code); this.name = 'ShardNotFoundError'; }
 }
 export class ShardValidationError extends ShardLibraryError {
-  constructor(msg) { super(msg); this.name = 'ShardValidationError'; }
+  constructor(msg, code = null) { super(msg, code); this.name = 'ShardValidationError'; }
 }
 
 // ---------------------------------------------------------------------------
@@ -203,12 +211,12 @@ export function updateShard(library, id, mutator) {
   try {
     raw = fs.readFileSync(target, 'utf8');
   } catch (e) {
-    throw new ShardLibraryError(`Failed to read ${target}: ${e.message}`);
+    throw new ShardLibraryError(`Failed to read ${target}: ${e.message}`, 'io-error:read');
   }
   try {
     current = JSON.parse(raw);
   } catch (e) {
-    throw new ShardValidationError(`Invalid JSON in ${target}: ${e.message}`);
+    throw new ShardValidationError(`Invalid JSON in ${target}: ${e.message}`, 'validation-error:shard-json');
   }
 
   // 3. Mutate + validate shape
@@ -224,7 +232,7 @@ export function updateShard(library, id, mutator) {
   } catch (e) {
     // Best-effort cleanup of orphan tmp; ignore unlink failures.
     try { fs.unlinkSync(tmp); } catch { /* ignore */ }
-    throw new ShardLibraryError(`Atomic write failed for ${target}: ${e.message}`);
+    throw new ShardLibraryError(`Atomic write failed for ${target}: ${e.message}`, 'io-error:write');
   }
 
   return next;
@@ -314,7 +322,7 @@ export function rebuildLibrary(library) {
 // SPRINT-2/3 INTEGRATION POINT: branch-setup uses 'in-progress', merge-task uses 'done'. Currently consumed only by tests/shard-library.test.mjs.
 export function resolveStatusVocab(library) {
   if (!library || typeof library !== 'object') {
-    throw new ShardLibraryError('resolveStatusVocab: library must be an object');
+    throw new ShardLibraryError('resolveStatusVocab: library must be an object', 'vocab-error:bad-library');
   }
   const cached = _statusVocabCache.get(library);
   if (cached) return cached;
@@ -326,7 +334,8 @@ export function resolveStatusVocab(library) {
   if (sm !== null && sm !== undefined) {
     if (typeof sm !== 'object') {
       throw new ShardLibraryError(
-        `library '${libId}'.statusMap must be an object with 'start' and 'done' string keys`
+        `library '${libId}'.statusMap must be an object with 'start' and 'done' string keys`,
+        'vocab-error:statusmap-invalid'
       );
     }
     const hasStart = typeof sm.start === 'string' && sm.start.length > 0;
@@ -340,7 +349,8 @@ export function resolveStatusVocab(library) {
     const present = Object.keys(sm).join(', ') || '(none)';
     throw new ShardLibraryError(
       `library '${libId}'.statusMap must define both 'start' and 'done' as non-empty strings ` +
-      `(got keys: ${present}). Set both, or remove statusMap to use the schema heuristic.`
+      `(got keys: ${present}). Set both, or remove statusMap to use the schema heuristic.`,
+      'vocab-error:statusmap-partial'
     );
   }
 
@@ -473,19 +483,21 @@ function _synthesizeLegacyLibrary(cfg, configDir, configPath) {
 
 function validateShardShape(shard, sourcePath) {
   if (!shard || typeof shard !== 'object') {
-    throw new ShardValidationError(`Mutator returned non-object for ${sourcePath}`);
+    throw new ShardValidationError(`Mutator returned non-object for ${sourcePath}`, 'validation-error:non-object');
   }
   for (const f of ['id', 'status', 'updated']) {
     if (typeof shard[f] !== 'string' || shard[f].length === 0) {
       throw new ShardValidationError(
-        `Mutator returned shard missing required field "${f}" for ${sourcePath}`
+        `Mutator returned shard missing required field "${f}" for ${sourcePath}`,
+        `validation-error:missing-${f}`
       );
     }
   }
   // Cheap ISO-8601 sniff — full validation is the rebuild CLI's job.
   if (!/^\d{4}-\d{2}-\d{2}T/.test(shard.updated)) {
     throw new ShardValidationError(
-      `Field "updated" must be ISO-8601 timestamp, got "${shard.updated}" in ${sourcePath}`
+      `Field "updated" must be ISO-8601 timestamp, got "${shard.updated}" in ${sourcePath}`,
+      'validation-error:bad-updated'
     );
   }
 }
@@ -500,13 +512,15 @@ function _loadStatusEnum(library) {
   if (typeof schemaPath !== 'string' || schemaPath.length === 0) {
     throw new ShardLibraryError(
       `Cannot resolve status vocab for library '${libId}': no schemaPath set. ` +
-      `Set statusMap in .orchestrator.json or provide schemaPath.`
+      `Set statusMap in .orchestrator.json or provide schemaPath.`,
+      'vocab-error:no-schema-path'
     );
   }
   if (!fs.existsSync(schemaPath)) {
     throw new ShardLibraryError(
       `Cannot resolve status vocab for library '${libId}': schema not found at ${schemaPath}. ` +
-      `Set statusMap in .orchestrator.json or provide schemaPath.`
+      `Set statusMap in .orchestrator.json or provide schemaPath.`,
+      'vocab-error:schema-missing'
     );
   }
 
@@ -516,20 +530,22 @@ function _loadStatusEnum(library) {
   } catch (e) {
     throw new ShardLibraryError(
       `Cannot read schema for library '${libId}' at ${schemaPath}: ${e.message}. ` +
-      `Set statusMap in .orchestrator.json to bypass schema reads.`
+      `Set statusMap in .orchestrator.json to bypass schema reads.`,
+      'vocab-error:schema-unreadable'
     );
   }
   try {
     schema = JSON.parse(raw);
   } catch (e) {
-    throw new ShardValidationError(`Invalid JSON in ${schemaPath}: ${e.message}`);
+    throw new ShardValidationError(`Invalid JSON in ${schemaPath}: ${e.message}`, 'validation-error:schema-json');
   }
 
   const enumVals = schema?.properties?.status?.enum;
   if (!Array.isArray(enumVals) || !enumVals.every((v) => typeof v === 'string')) {
     throw new ShardLibraryError(
       `Schema at ${schemaPath} has no \`properties.status.enum\` string array; ` +
-      `cannot infer status vocab for library '${libId}'. Set statusMap explicitly.`
+      `cannot infer status vocab for library '${libId}'. Set statusMap explicitly.`,
+      'vocab-error:enum-missing'
     );
   }
   return enumVals;
@@ -547,13 +563,15 @@ function _matchOne(enumVals, regex, role, libId, schemaPath) {
   if (matches.length === 0) {
     throw new ShardLibraryError(
       `Cannot infer '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
-      `no enum value matched ${regex} (enum: ${enumStr}). ${remediation}`
+      `no enum value matched ${regex} (enum: ${enumStr}). ${remediation}`,
+      `vocab-error:no-match-${role}`
     );
   }
   throw new ShardLibraryError(
     `Ambiguous '${role}' status for library '${libId}' from schema ${schemaPath}: ` +
     `${matches.length} enum values matched ${regex} → ${JSON.stringify(matches)} ` +
-    `(enum: ${enumStr}). ${remediation}`
+    `(enum: ${enumStr}). ${remediation}`,
+    `vocab-error:ambiguous-${role}`
   );
 }
 
