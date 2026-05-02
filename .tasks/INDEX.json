@@ -1,9 +1,15 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T03:16:24.766Z",
+  "updated": "2026-05-02T04:18:17.062Z",
   "next_task_id": "TASK-036",
-  "previous_task": null,
+  "previous_task": {
+    "id": "TASK-028",
+    "title": "Resolver: add per-shard status safety net + drift warning",
+    "status": "done",
+    "effort": "S",
+    "completed": "2026-05-02T04:17:55Z"
+  },
   "current_task": {
     "id": "TASK-010",
     "title": "Implement collision prompt (resume / restart / abandon)",
@@ -329,32 +335,6 @@
       ]
     },
     {
-      "id": "TASK-028",
-      "title": "Resolver: add per-shard status safety net + drift warning",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "bug",
-        "resilience",
-        "sprint-3-followup",
-        "sprint-4"
-      ]
-    },
-    {
-      "id": "TASK-029",
-      "title": "Extract commitShardDeltas → lib/commit-shard-deltas.mjs",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "refactor",
-        "tech-debt",
-        "sprint-3-followup",
-        "sprint-4"
-      ]
-    },
-    {
       "id": "TASK-030",
       "title": "Reasons registry: introduce family aggregates",
       "status": "backlog",
@@ -389,18 +369,6 @@
       ]
     },
     {
-      "id": "TASK-033",
-      "title": "Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "security",
-        "sprint-3-followup",
-        "sprint-4"
-      ]
-    },
-    {
       "id": "TASK-034",
       "title": "Spike: programmatic lib/tasklist-rebuild.mjs API",
       "status": "backlog",
@@ -428,22 +396,22 @@
   "blocked_tasks": [],
   "counts": {
     "total": 35,
-    "backlog": 34,
+    "backlog": 31,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
-    "done": 0,
+    "done": 3,
     "cancelled": 0,
-    "open": 35,
-    "closed": 0,
+    "open": 32,
+    "closed": 3,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 74,
-    "closed_estimate_hours": 0,
-    "closed_actual_hours": 0,
-    "estimate_accuracy": null
+    "open_hours": 69.5,
+    "closed_estimate_hours": 4.5,
+    "closed_actual_hours": 4.5,
+    "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"
 }

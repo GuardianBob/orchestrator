@@ -19,8 +19,10 @@
     "lib/README.md documents the new module in the same style as existing entries",
     "All 166 tests still pass (no behavior change); TASK-015 + TASK-016 integration tests validate the three-sibling pattern still works"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-02T02:44:04.601Z",
-  "updated": "2026-05-02T02:44:04.601Z",
-  "id": "TASK-029"
+  "updated": "2026-05-02T04:17:55Z",
+  "id": "TASK-029",
+  "completed": "2026-05-02T04:17:55Z",
+  "notes": "2026-05-02 — Merged into sprint-4 (1d1e31a). Extracted commitShardDeltas → lib/commit-shard-deltas.mjs (150 LOC). scripts/merge-task.mjs 671→543 LOC. Tests 170→171. All 3 reviewers approve."
 }

@@ -1,22 +1,26 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T03:16:24.766Z",
+  "updated": "2026-05-02T04:18:17.062Z",
   "next_task_id": "TASK-036",
   "counts": {
     "total": 35,
-    "backlog": 34,
+    "backlog": 31,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
-    "done": 0,
+    "done": 3,
     "cancelled": 0,
-    "open": 35,
-    "closed": 0,
+    "open": 32,
+    "closed": 3,
     "archived": 0
   },
-  "previous_task": null,
+  "previous_task": {
+    "id": "TASK-028",
+    "title": "Resolver: add per-shard status safety net + drift warning",
+    "status": "done"
+  },
   "current_task": {
     "id": "TASK-010",
     "title": "Implement collision prompt (resume / restart / abandon)",
@@ -29,7 +33,7 @@
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 35,
+    "open_tasks": 32,
     "blocked_tasks": 0
   }
 }
