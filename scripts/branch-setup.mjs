@@ -30,6 +30,7 @@ import {
 import { promptCollisionChoice, buildRestartedShard } from '../lib/collision-prompt.mjs';
 import { isMain } from '../lib/is-main.mjs';
 import { normalizeTaskId } from '../lib/task-id.mjs';
+import { sanitizeErrorMessage } from '../lib/sanitize-error.mjs';
 
 // ---------------------------------------------------------------------------
 // LD-CLI-003 — required-value enforcement
@@ -244,8 +245,8 @@ async function handleCollisionAtStart(ctx) {
     try {
       updateShard(primary, taskId, (cur) => buildRestartedShard(cur, nowIso));
     } catch (e) {
-      process.stderr.write(`[branch-setup] restart write failed: ${e.message}\n`);
-      const statusFlip = { flipped: false, reason: `restart-io-error:${e.message}`, choice };
+      process.stderr.write(`[branch-setup] restart write failed: ${sanitizeErrorMessage(e)}\n`);
+      const statusFlip = { flipped: false, reason: `restart-io-error:${sanitizeErrorMessage(e)}`, choice };
       console.log(JSON.stringify(
         { sprintBranch, taskBranch, baseBranch,
           current: sh('git branch --show-current'), statusFlip },
@@ -300,7 +301,7 @@ async function main() {
     args = parseArgs(process.argv.slice(2));
   } catch (e) {
     if (e instanceof UsageError) {
-      process.stderr.write(`${e.message}\n`);
+      process.stderr.write(`${sanitizeErrorMessage(e)}\n`);
       printHelp();
       process.exit(3);
     }
@@ -333,7 +334,7 @@ async function main() {
     libraries = loadLibraries(cfgPath);
   } catch (e) {
     if (e instanceof ShardLibraryError) {
-      process.stderr.write(`[branch-setup] config error: ${e.message}\n`);
+      process.stderr.write(`[branch-setup] config error: ${sanitizeErrorMessage(e)}\n`);
       process.exit(5);
     }
     throw e;
