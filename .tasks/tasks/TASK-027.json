@@ -1,0 +1,25 @@
+{
+  "title": "Sprint-3 consolidation: unify lib/, extract is-main, add reasons registry",
+  "priority": "high",
+  "effort": "M",
+  "tags": [
+    "sprint-shard-c",
+    "refactor",
+    "architectural-debt"
+  ],
+  "depends_on": [
+    "TASK-013"
+  ],
+  "description": "Architect-driven consolidation before TASK-014 amplifies asymmetry. Three coordinated changes: (1) Collapse scripts/lib/ into top-level lib/ (move scripts/lib/task-id.mjs and scripts/shard-library.mjs into lib/; update all imports). (2) Extract lib/is-main.mjs with npm-link junction handling per LD-PAT-005; replace inline isDirectInvocation IIFE in merge-task.mjs. (3) Add lib/merge-task-reasons.mjs as central registry for ~22 free-form reason strings currently scattered in merge-task.mjs (e.g., shard-not-found, already-done, locate-error, update-failed, rebuild-failed, unknown-library, no-changes). Refactor branch-setup.mjs to import normalizeTaskId from lib/task-id.mjs (resolves TASK-013 sprint-4-phase-2 TODO).",
+  "acceptance_criteria": [
+    "Only one lib/ directory exists at repo root; scripts/lib/ is deleted",
+    "lib/is-main.mjs exported with Windows + npm-link junction handling per LD-PAT-005; used in merge-task.mjs replacing inline IIFE",
+    "lib/merge-task-reasons.mjs exports all ~22 reason constants as named exports; merge-task.mjs imports them; no free-form reason string literals remain in merge-task.mjs",
+    "branch-setup.mjs uses lib/task-id.mjs (deriveTaskId removed; normalizeTaskId imported)",
+    "All 135 existing tests still pass plus new tests: is-main (Windows path + npm-link junction cases) and reasons-registry (constants exported + value-uniqueness assertion)"
+  ],
+  "status": "backlog",
+  "created": "2026-05-02T01:00:37.776Z",
+  "updated": "2026-05-02T01:00:37.776Z",
+  "id": "TASK-027"
+}
