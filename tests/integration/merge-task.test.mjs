@@ -394,4 +394,62 @@ describe('integration: merge-task post-merge pipeline (TASK-015)', () => {
       expect(f.startsWith('.issues/'), `unexpected .issues/ file in commit: ${f}`).toBe(false);
     }
   });
+
+  // -------------------------------------------------------------------------
+  // Scenario E — TASK-033: closePrimaryShardOnMerge sanitizes thrown error
+  // (SEC-W-012-1). Forces a vocab error by writing a malformed schema, then
+  // asserts stderr contains the warning prefix but NOT the absolute repo path
+  // and NOT a raw drive letter prefix from the thrown ENOENT.
+  // -------------------------------------------------------------------------
+  it('E. closePrimaryShardOnMerge sanitizes thrown error in stderr (no path leak)', () => {
+    repo = setupTmpRepo({ taskVariant: 'unlinked' });
+    performFakeMerge(repo.dir, 'sprint-3', 'sprint-3-task-101-demo');
+    const mergeSha = git(repo.dir, 'rev-parse HEAD').trim();
+
+    // Corrupt the task schema so resolveStatusVocab throws with a path-bearing message.
+    fs.writeFileSync(
+      path.join(repo.dir, '.tasks', 'schemas', 'task.schema.json'),
+      '{ this is not valid json',
+      'utf8',
+    );
+
+    __resetCache();
+    const libraries = loadLibraries(path.join(repo.dir, '.orchestrator.json'));
+
+    // Capture stderr
+    const chunks = [];
+    const origWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (chunk) => { chunks.push(String(chunk)); return true; };
+    let result;
+    try {
+      result = closePrimaryShardOnMerge({
+        libraries, taskId: 'TASK-101', sprintBranch: 'sprint-3', mergeSha,
+      });
+    } finally {
+      process.stderr.write = origWrite;
+    }
+    const stderr = chunks.join('');
+
+    // Either vocab error OR shard read failed — both are sanitizer call sites.
+    expect(stderr).toMatch(/\[merge-task\] (vocab error|shard read failed)/);
+    expect(result.closed).toBe(false);
+
+    // No absolute repo path leaks. repo.dir is an absolute tmp path.
+    expect(stderr).not.toContain(repo.dir);
+    // The drive-letter portion (e.g., "C:\Users") should be redacted to <path>.
+    if (process.platform === 'win32') {
+      expect(stderr).not.toMatch(/[A-Z]:\\[A-Za-z]/);
+    } else {
+      // POSIX tmpdirs usually start with /tmp or /var — redacted form ≠ raw.
+      expect(stderr).not.toMatch(/\/tmp\/merge-task-it-/);
+      expect(stderr).not.toMatch(/\/var\/folders/);
+    }
+    // If anything was redacted, the visible token should appear.
+    // (At minimum, message length on a single warning line stays bounded.)
+    const warnLines = stderr.split('\n').filter((l) => l.startsWith('[merge-task]'));
+    for (const line of warnLines) {
+      // 200-char message cap + ~50-char prefix budget = generous 280 char ceiling.
+      expect(line.length).toBeLessThan(300);
+    }
+  });
 });
