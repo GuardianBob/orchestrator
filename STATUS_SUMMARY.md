@@ -27,3 +27,5 @@
 - [2026-05-01] Completed task-009: Add status flip to branch-setup.mjs
 
 - [2026-05-02] Completed task-012: Add primary-shard close to merge-task.mjs
+
+- [2026-05-02] Completed task-013: Add cross-library link closing to merge-task.mjs
