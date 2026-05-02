@@ -37,3 +37,5 @@
 - [2026-05-02] Completed task-015: test(orchestrator): TASK-015 integration test for merge-task workflow
 
 - [2026-05-02] Completed task-028: Resolver: add per-shard status safety net + drift warning
+
+- [2026-05-02] Completed task-029: Extract commitShardDeltas to lib/commit-shard-deltas.mjs
