@@ -28,3 +28,6 @@ feat(task-017): Rewrite skill/SKILL.md Configuration section + add Shard Library
 
 ## 2026-05-02 `bb9ac76` sprint-5-task-018-update-readme-multi-library
 feat(task-018): Update README.md for multi-library + write-back + cross-library linkage
+
+## 2026-05-02 `ee49940` sprint-5-task-019-audit-commands-md
+feat(task-019): Audit commands/orchestrate.md for new sprint-1/2/3 behaviors

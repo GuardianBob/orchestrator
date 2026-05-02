@@ -47,3 +47,5 @@
 - [2026-05-02] Completed task-017: Rewrite skill/SKILL.md Configuration section + add Shard Library Integration
 
 - [2026-05-02] Completed task-018: Update README.md for multi-library + write-back + cross-library linkage
+
+- [2026-05-02] Completed task-019: Audit commands/orchestrate.md for new sprint-1/2/3 behaviors
