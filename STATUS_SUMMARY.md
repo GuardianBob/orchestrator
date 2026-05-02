@@ -35,3 +35,11 @@
 - [2026-05-02] Completed task-014: feat(orchestrator): TASK-014 commit shard deltas on merge
 
 - [2026-05-02] Completed task-015: test(orchestrator): TASK-015 integration test for merge-task workflow
+
+- [2026-05-02] Completed task-028: Resolver: add per-shard status safety net + drift warning
+
+- [2026-05-02] Completed task-029: Extract commitShardDeltas to lib/commit-shard-deltas.mjs
+
+- [2026-05-02] Completed task-033: Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)
+
+- [2026-05-02] Completed task-036: Apply sanitizeErrorMessage to branch-setup.mjs + resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)

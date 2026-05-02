@@ -1,22 +1,26 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T03:16:24.766Z",
-  "next_task_id": "TASK-036",
+  "updated": "2026-05-02T04:33:07.956Z",
+  "next_task_id": "TASK-037",
   "counts": {
-    "total": 35,
-    "backlog": 34,
+    "total": 36,
+    "backlog": 31,
     "ready": 0,
     "in_progress": 1,
     "blocked": 0,
     "review": 0,
-    "done": 0,
+    "done": 4,
     "cancelled": 0,
-    "open": 35,
-    "closed": 0,
+    "open": 32,
+    "closed": 4,
     "archived": 0
   },
-  "previous_task": null,
+  "previous_task": {
+    "id": "TASK-036",
+    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+    "status": "done"
+  },
   "current_task": {
     "id": "TASK-010",
     "title": "Implement collision prompt (resume / restart / abandon)",
@@ -29,7 +33,7 @@
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 35,
+    "open_tasks": 32,
     "blocked_tasks": 0
   }
 }

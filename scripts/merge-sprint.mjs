@@ -3,6 +3,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { sanitizeErrorMessage } from '../lib/sanitize-error.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => {
   if (v.startsWith('--')) a.push([v.slice(2), arr[i + 1]]);
@@ -23,7 +24,7 @@ shSafe('git pull --ff-only');
 try {
   sh(`git merge --no-ff ${sprintBranch} -m "merge(${sprintBranch}): sprint complete"`);
 } catch (e) {
-  console.error(JSON.stringify({ error: 'sprint merge failed', detail: e.message.slice(0, 500) }));
+  console.error(JSON.stringify({ error: 'sprint merge failed', detail: sanitizeErrorMessage(e) }));
   process.exit(2);
 }
 

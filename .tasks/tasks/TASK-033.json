@@ -18,8 +18,10 @@
     "Existing tests still pass (warning content tests must be updated to assert on sanitized format)",
     "New unit test asserts that no warning emits an absolute path when DEBUG flag is unset"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-02T02:45:07.432Z",
-  "updated": "2026-05-02T02:45:07.432Z",
-  "id": "TASK-033"
+  "updated": "2026-05-02T04:17:55Z",
+  "id": "TASK-033",
+  "completed": "2026-05-02T04:17:55Z",
+  "notes": "2026-05-02 — Merged into sprint-4. SEC-W-012-1 closed via lib/sanitize-error.mjs (69 LOC) wrapping 6 stderr sites. scripts/merge-task.mjs +1 net LOC. Tests 171→187. security-auditor sec_w_012_1_closed=true; all 3 reviewers approve."
 }

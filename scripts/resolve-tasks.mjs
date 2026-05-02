@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { ShardLibraryError, loadLibraries, locateShard } from '../lib/shard-library.mjs';
+import { sanitizeErrorMessage } from '../lib/sanitize-error.mjs';
 
 const argv = process.argv.slice(2);
 const flagIdx = argv.indexOf('--target');
@@ -142,7 +143,7 @@ function parseShardLibrary(lib) {
   let idx;
   try { idx = JSON.parse(fs.readFileSync(lib.indexPath, 'utf8')); }
   catch (e) {
-    console.error(`[resolve-tasks] WARN: failed to read/parse ${lib.indexPath}: ${e.message}. Library '${lib.id}' will contribute zero tasks.`);
+    console.error(`[resolve-tasks] WARN: failed to read/parse ${lib.indexPath}: ${sanitizeErrorMessage(e)}. Library '${lib.id}' will contribute zero tasks.`);
     return out;
   }
   if (!idx || !Array.isArray(idx.open_tasks)) {
@@ -164,7 +165,7 @@ function parseShardLibrary(lib) {
       shardPath = locateShard(lib, row.id);
     } catch (e) {
       if (e instanceof ShardLibraryError) {
-        console.error(`[resolve-tasks] WARN: skipping task with unsafe id "${row.id}" in ${lib.indexPath}: ${e.message}`);
+        console.error(`[resolve-tasks] WARN: skipping task with unsafe id "${row.id}" in ${lib.indexPath}: ${sanitizeErrorMessage(e)}`);
         continue;
       }
       throw e;
@@ -173,11 +174,27 @@ function parseShardLibrary(lib) {
     if (shardPath !== null) {
       try { shard = JSON.parse(fs.readFileSync(shardPath, 'utf8')); }
       catch (e) {
-        console.error(`[resolve-tasks] WARN: failed to parse shard ${shardPath}: ${e.message}. Falling back to INDEX summary (no description, no acceptance criteria).`);
+        console.error(`[resolve-tasks] WARN: failed to parse shard ${shardPath}: ${sanitizeErrorMessage(e)}. Falling back to INDEX summary (no description, no acceptance criteria).`);
       }
     } else {
       console.error(`[resolve-tasks] WARN: shard for ${row.id} is missing under ${lib.shardDir}; will dispatch with title-only body (no description, no acceptance criteria). Run \`npx tasklist-rebuild\` to repair.`);
     }
+    // --- TASK-028: shard-status safety net (LD-ARC-002) -----------------------
+    // shard.status is authoritative; INDEX row.status is a derived projection
+    // that can drift when `npx tasklist-rebuild` fails or is skipped. If the
+    // shard says terminal but INDEX still lists the row as open, refuse to
+    // re-queue the task and warn loudly to stderr (LD-PAT-007).
+    if (shard && shard.status) {
+      const shardStatus = String(shard.status).toLowerCase();
+      if (DONE_STATUSES.has(shardStatus)) {
+        const indexStatus = String(row.status || 'unknown').toLowerCase();
+        console.warn(
+          `[resolver] shard drift: ${row.id} status=${shardStatus} in shard but INDEX says ${indexStatus}; skipping. Run: npx tasklist-rebuild`
+        );
+        continue;
+      }
+    }
+    // --------------------------------------------------------------------------
     const title = (shard && shard.title) || row.title || row.id;
     const bodyParts = [`# ${row.id}: ${title}`, ''];
     if (shard?.priority) bodyParts.push(`**Priority:** ${shard.priority}  **Effort:** ${shard.effort || '?'}`);
