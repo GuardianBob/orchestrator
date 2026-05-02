@@ -18,8 +18,6 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { realpathSync } from 'node:fs';
 import {
   loadLibraries,
   locateShard,
@@ -28,23 +26,10 @@ import {
   resolveStatusVocab,
   ShardLibraryError,
   ShardValidationError,
-} from './shard-library.mjs';
+} from '../lib/shard-library.mjs';
 import { promptCollisionChoice, buildRestartedShard } from '../lib/collision-prompt.mjs';
-
-// ---------------------------------------------------------------------------
-// LD-PAT-005 — isMain guard (ported inline; no lib/is-main.mjs in repo)
-// ---------------------------------------------------------------------------
-
-function isMain(metaUrl) {
-  const argv1 = process.argv[1];
-  if (!argv1) return false;
-  try {
-    const resolved = pathToFileURL(realpathSync(argv1)).href;
-    return resolved === metaUrl;
-  } catch {
-    return false;
-  }
-}
+import { isMain } from '../lib/is-main.mjs';
+import { normalizeTaskId } from '../lib/task-id.mjs';
 
 // ---------------------------------------------------------------------------
 // LD-CLI-003 — required-value enforcement
@@ -300,18 +285,10 @@ function branchExists(name) {
 }
 
 // ---------------------------------------------------------------------------
-// Zero-pad task id to TASK-NNN (≥3 digits; larger naturally widen)
+// Task-id normalization — delegated to lib/task-id.mjs (single source of truth).
 // ---------------------------------------------------------------------------
 
-function deriveTaskId(rawTaskArg) {
-  const s = String(rawTaskArg);
-  // Already a full ID? Accept verbatim if it matches the safe pattern.
-  if (/^[A-Z][A-Z0-9_]*-\d+$/.test(s)) return s;
-  // Pure digits → zero-pad to 3.
-  if (/^\d+$/.test(s)) return `TASK-${s.padStart(3, '0')}`;
-  // Anything else: pass through and let validateShardId throw downstream.
-  return `TASK-${s}`;
-}
+// (deriveTaskId removed — use normalizeTaskId from ../lib/task-id.mjs)
 
 // ---------------------------------------------------------------------------
 // main()
@@ -387,7 +364,7 @@ async function main() {
 
   // ─── SAFE POINT: branch is live; flip is best-effort below ─────────────────
 
-  const taskId = deriveTaskId(args.task);
+  const taskId = normalizeTaskId(args.task);
 
   // Local helper: emits the canonical envelope to stdout and exits.
   // Captures sprintBranch/taskBranch/baseBranch from the enclosing scope

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
-import { loadLibraries } from './shard-library.mjs';
+import { loadLibraries } from '../lib/shard-library.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cwd = process.cwd();

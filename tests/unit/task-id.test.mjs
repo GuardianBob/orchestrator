@@ -3,7 +3,7 @@
 // deriveTaskId byte-for-byte. Any divergence is a bug.
 
 import { describe, it, expect } from 'vitest';
-import { normalizeTaskId } from '../../scripts/lib/task-id.mjs';
+import { normalizeTaskId } from '../../lib/task-id.mjs';
 
 describe('normalizeTaskId', () => {
   it('zero-pads pure digit string to TASK-NNN', () => {
