@@ -1,8 +1,9 @@
 # Memory
 
-next_task_id: 14
+next_task_id: 15
 
 ## recent_changes
+- [2026-05-02] task-015 merged → sprint-3
 - [2026-05-02] task-014 merged → sprint-3
 - [2026-05-02] task-027 merged → sprint-3
 - [2026-05-02] task-013 merged → sprint-3
