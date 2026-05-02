@@ -19,3 +19,6 @@ feat(task-028): Resolver: add per-shard status safety net + drift warning
 
 ## 2026-05-02 `1d1e31a` sprint-4-task-029-extract-commit-shard-deltas-to-lib
 feat(task-029): Extract commitShardDeltas to lib/commit-shard-deltas.mjs
+
+## 2026-05-02 `80efad0` sprint-4-task-033-sanitize-stderr-close-primary-shard
+feat(task-033): Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)

@@ -39,3 +39,5 @@
 - [2026-05-02] Completed task-028: Resolver: add per-shard status safety net + drift warning
 
 - [2026-05-02] Completed task-029: Extract commitShardDeltas to lib/commit-shard-deltas.mjs
+
+- [2026-05-02] Completed task-033: Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)
