@@ -12,11 +12,13 @@
     "Quickstart config example is valid + minimal",
     "Multi-library example snippet matches TASK-017's example for consistency"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:49.089Z",
-  "updated": "2026-05-01T19:10:55.322Z",
+  "updated": "2026-05-04T15:53:57.165Z",
   "id": "TASK-018",
   "depends_on": [
     "TASK-017"
-  ]
+  ],
+  "completed": "2026-05-04T15:53:57.165Z",
+  "notes": "[2026-05-04] Reconciled: merged into sprint-5 at 4cf134e (shard status-flip missed during original merge)"
 }

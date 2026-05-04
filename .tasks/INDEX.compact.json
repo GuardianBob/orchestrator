@@ -1,35 +1,35 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:53:18.575Z",
+  "updated": "2026-05-04T15:53:59.641Z",
   "next_task_id": "TASK-039",
   "counts": {
     "total": 38,
-    "backlog": 13,
+    "backlog": 10,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 25,
+    "done": 28,
     "cancelled": 0,
-    "open": 13,
-    "closed": 25,
+    "open": 10,
+    "closed": 28,
     "archived": 0
   },
   "previous_task": {
-    "id": "TASK-020",
-    "title": "Live acceptance test against `issues-plugin` sprint-4",
+    "id": "TASK-019",
+    "title": "Audit `commands/*.md` for behavior changes",
     "status": "done"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-017",
-    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "id": "TASK-021",
+    "title": "Tag release v1.x.0",
     "status": "backlog"
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 13,
+    "open_tasks": 10,
     "blocked_tasks": 0
   }
 }

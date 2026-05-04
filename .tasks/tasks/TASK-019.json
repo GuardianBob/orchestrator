@@ -12,11 +12,13 @@
     "Diff of `commands/` is reviewed and committed",
     "No command file references removed/renamed scripts"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:50.606Z",
-  "updated": "2026-05-01T19:10:55.325Z",
+  "updated": "2026-05-04T15:53:57.166Z",
   "id": "TASK-019",
   "depends_on": [
     "TASK-017"
-  ]
+  ],
+  "completed": "2026-05-04T15:53:57.166Z",
+  "notes": "[2026-05-04] Reconciled: merged into sprint-5 at 7acc385 (shard status-flip missed during original merge)"
 }
