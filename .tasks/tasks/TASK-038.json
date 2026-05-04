@@ -17,8 +17,9 @@
     "Manual verification: re-run merge on a fixture and assert produced JSON validates against .tasks/schemas/task.schema.json.",
     "Back-fix the orchestrator repo's own TASK-037 shard (.tasks/tasks/TASK-037.json) to coerce its current array notes to a string. Commit separately as a chore."
   ],
-  "status": "backlog",
+  "status": "in-progress",
   "created": "2026-05-04T15:38:18.104Z",
-  "updated": "2026-05-04T15:38:18.104Z",
-  "id": "TASK-038"
+  "updated": "2026-05-04T15:38:38.386Z",
+  "id": "TASK-038",
+  "started": "2026-05-04T15:38:38.386Z"
 }

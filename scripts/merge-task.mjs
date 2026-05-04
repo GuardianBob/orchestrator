@@ -40,14 +40,15 @@ import { sanitizeErrorMessage } from '../lib/sanitize-error.mjs';
 // ---------------------------------------------------------------------------
 // Pure mutator — exported so TASK-015 can import-and-test directly.
 // Sets status=vocab.done, completed=nowIso, updated=nowIso, and appends a
-// note. Tolerates legacy notes-as-string and missing notes.
+// note. Notes is always a string per .tasks/schemas/task.schema.json;
+// tolerates legacy array-shaped notes (TASK-038 fix) by joining with newlines.
 // ---------------------------------------------------------------------------
 export function buildClosedShard(current, vocab, nowIso, noteEntry) {
   const next = { ...current, status: vocab.done, updated: nowIso, completed: nowIso };
   const prev = current.notes;
-  if (Array.isArray(prev))                                 next.notes = [...prev, noteEntry];
+  if (Array.isArray(prev))                                 next.notes = [...prev, noteEntry].join('\n');
   else if (typeof prev === 'string' && prev.length > 0)    next.notes = `${prev}\n${noteEntry}`;
-  else                                                     next.notes = [noteEntry];
+  else                                                     next.notes = noteEntry;
   return next;
 }
 
@@ -59,11 +60,10 @@ export function buildClosedShard(current, vocab, nowIso, noteEntry) {
 //   2. `completed` is preserved if already truthy — linked shards may have
 //      been resolved by a prior task; we record only the *first* resolver.
 //
-// Notes polymorphism (W3 carryover, mirrors buildClosedShard):
-//   - Array → spread + push, stays array.
-//   - Non-empty string → newline-concat, stays string.
-//   - Missing/null/empty → new single-element array.
-// Coercion to a uniform array shape is deferred post-sprint-3.
+// Notes is always a string per task.schema.json (TASK-038):
+//   - Array prior (legacy) → joined with newline, then appended.
+//   - Non-empty string prior → newline-concat.
+//   - Missing/null/empty → set to noteEntry directly.
 //
 // Note dedupe (defensive): if the most recent note already references the
 // same `Resolved by <taskId>`, skip the append (corner case: operator re-run
@@ -77,21 +77,16 @@ export function buildLinkedClosedShard(current, vocab, nowIso, noteEntry, taskId
   const prev = current.notes;
   const dedupeMarker = `Resolved by ${taskId}`;
 
-  if (Array.isArray(prev)) {
-    const last = prev.length > 0 ? prev[prev.length - 1] : null;
-    if (typeof last === 'string' && last.includes(dedupeMarker)) {
-      next.notes = prev;                                 // dedupe: no-op append
-    } else {
-      next.notes = [...prev, noteEntry];
-    }
-  } else if (typeof prev === 'string' && prev.length > 0) {
-    if (prev.includes(dedupeMarker)) {
-      next.notes = prev;                                 // dedupe: no-op append
-    } else {
-      next.notes = `${prev}\n${noteEntry}`;
-    }
+  // Coerce legacy array-shaped notes to string (TASK-038).
+  const prevStr = Array.isArray(prev) ? prev.join('\n')
+                : (typeof prev === 'string' ? prev : '');
+
+  if (prevStr.length === 0) {
+    next.notes = noteEntry;
+  } else if (prevStr.includes(dedupeMarker)) {
+    next.notes = prevStr;                                // dedupe: no-op append
   } else {
-    next.notes = [noteEntry];
+    next.notes = `${prevStr}\n${noteEntry}`;
   }
   return next;
 }

@@ -247,9 +247,8 @@ describe('integration: silent infinite loop regression (TASK-016)', () => {
     const shardAfterMerge = readJson(path.join(repo.dir, '.tasks', 'tasks', 'TASK-001.json'));
     expect(shardAfterMerge.status).toBe('done');
     expect(shardAfterMerge.completed).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(shardAfterMerge.notes).toEqual(expect.arrayContaining([
-      expect.stringMatching(/Merged into sprint-3 at [0-9a-f]{12}/),
-    ]));
+    expect(typeof shardAfterMerge.notes).toBe('string');
+    expect(shardAfterMerge.notes).toMatch(/Merged into sprint-3 at [0-9a-f]{12}/);
 
     // ---- AC #1: re-resolve returns empty queue ----------------------------
     const reresolve = runResolveTasks(repo.dir, 'sprint-3');

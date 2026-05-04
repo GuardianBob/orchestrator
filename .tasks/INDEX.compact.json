@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:38:27.711Z",
+  "updated": "2026-05-04T15:38:39.915Z",
   "next_task_id": "TASK-039",
   "counts": {
     "total": 38,
-    "backlog": 15,
+    "backlog": 14,
     "ready": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 23,
@@ -21,10 +21,14 @@
     "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
     "status": "done"
   },
-  "current_task": null,
-  "next_task": {
+  "current_task": {
     "id": "TASK-038",
     "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
+    "status": "in-progress"
+  },
+  "next_task": {
+    "id": "TASK-017",
+    "title": "Rewrite `skill/SKILL.md` Configuration section",
     "status": "backlog"
   },
   "blocked_top": [],
