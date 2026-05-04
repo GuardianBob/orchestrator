@@ -31,3 +31,6 @@ feat(task-018): Update README.md for multi-library + write-back + cross-library 
 
 ## 2026-05-02 `ee49940` sprint-5-task-019-audit-commands-md
 feat(task-019): Audit commands/orchestrate.md for new sprint-1/2/3 behaviors
+
+## 2026-05-04 `2bdb094` sprint-5-task-037-fix-install-script
+feat(task-037): Fix install.ps1: install lib/, recurse templates/, drop dir-exists skip
