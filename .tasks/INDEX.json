@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T16:14:18.303Z",
-  "next_task_id": "TASK-042",
+  "updated": "2026-05-04T19:32:42.471Z",
+  "next_task_id": "TASK-043",
   "previous_task": {
     "id": "TASK-021",
     "title": "Tag release v1.x.0",
@@ -163,24 +163,37 @@
         "lib-core",
         "post-v0-2-0"
       ]
+    },
+    {
+      "id": "TASK-042",
+      "title": "Harden validateShardShape to type-check optional fields (notes, description)",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "hardening",
+        "lib-core",
+        "defense-in-depth",
+        "post-v0-2-0"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 41,
-    "backlog": 12,
+    "total": 42,
+    "backlog": 13,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 29,
     "cancelled": 0,
-    "open": 12,
+    "open": 13,
     "closed": 29,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 17,
+    "open_hours": 17.5,
     "closed_estimate_hours": 65,
     "closed_actual_hours": 65,
     "estimate_accuracy": 1

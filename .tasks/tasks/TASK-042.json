@@ -1,0 +1,24 @@
+{
+  "title": "Harden validateShardShape to type-check optional fields (notes, description)",
+  "effort": "XS",
+  "priority": "low",
+  "tags": [
+    "hardening",
+    "lib-core",
+    "defense-in-depth",
+    "post-v0-2-0"
+  ],
+  "description": "lib/shard-library.mjs:484 validateShardShape currently only validates required fields (id, status, updated) and ISO-format of `updated`. Optional fields like `notes` and `description` are not type-checked, which means any writer (current or future) that produces a wrong-shape value (e.g. notes as array, description as object) silently writes invalid JSON to disk that fails downstream tasklist-rebuild validation.\n\nReal-world incident: TASK-038 fixed buildClosedShard / buildLinkedClosedShard to coerce array-shaped notes to string. Both were correctly producing strings post-fix. But during a sprint-4 acceptance run against the issues-plugin repo on 2026-05-04 (before the TASK-038 deploy reached ~/.config/opencode/skills/orchestrator/), the OLD pre-coercion code wrote two task shards with `notes: [\"...\"]`. validateShardShape happily passed them through; tasklist-rebuild downstream rejected them; manual coercion + rebuild was required.\n\nWith TASK-038 deployed, this specific bug is fixed at the source. But validateShardShape remains a single-point-of-failure gap: any future writer (a new mutator, a third-party CLI, a half-completed refactor) that re-introduces a wrong shape for notes/description will repeat the same incident pattern. A 3-line type-check at the gate would have caught both occurrences immediately at the write point.\n\nScope is intentionally narrow: only type-check fields the shard schema/spec actually defines as optional strings. Don't try to validate the full schema here — that's tasklist-rebuild's job. This is just a defensive write-time guard.",
+  "acceptance_criteria": [
+    "validateShardShape rejects shards where notes is present but not a string (with error code 'validation-error:bad-notes-type')",
+    "validateShardShape rejects shards where description is present but not a string (with error code 'validation-error:bad-description-type')",
+    "Missing notes/description still passes (they are optional)",
+    "Empty-string notes/description passes (vs the existing length>0 check on required fields)",
+    "Add unit test covering: (a) array notes throws, (b) object description throws, (c) missing optional fields pass, (d) string optional fields pass, (e) all existing required-field checks still pass",
+    "All existing 195 tests still pass"
+  ],
+  "status": "backlog",
+  "created": "2026-05-04T20:30:00.000Z",
+  "updated": "2026-05-04T20:30:00.000Z",
+  "id": "TASK-042"
+}
