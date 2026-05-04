@@ -55,3 +55,5 @@
 - [2026-05-04] Completed task-038: Fix merge-task notes written as array (schema requires string)
 
 - [2026-05-04] Completed task-020: docs(task-020): acceptance results - PASS, 1 orch bug fixed via TASK-038, 4 issues-plugin findings referred back
+
+- [2026-05-04] Completed task-021: release(v0.2.0): sprint-4 multi-library + sprint-5 docs/install/notes fixes (TASK-021)
