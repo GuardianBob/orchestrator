@@ -34,3 +34,6 @@ feat(task-019): Audit commands/orchestrate.md for new sprint-1/2/3 behaviors
 
 ## 2026-05-04 `2bdb094` sprint-5-task-037-fix-install-script
 feat(task-037): Fix install.ps1: install lib/, recurse templates/, drop dir-exists skip
+
+## 2026-05-04 `d6d3148` sprint-5-task-038-fix-notes-array-bug
+feat(task-038): Fix merge-task notes written as array (schema requires string)
