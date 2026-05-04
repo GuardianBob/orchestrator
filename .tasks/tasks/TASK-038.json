@@ -17,9 +17,11 @@
     "Manual verification: re-run merge on a fixture and assert produced JSON validates against .tasks/schemas/task.schema.json.",
     "Back-fix the orchestrator repo's own TASK-037 shard (.tasks/tasks/TASK-037.json) to coerce its current array notes to a string. Commit separately as a chore."
   ],
-  "status": "in-progress",
+  "status": "done",
   "created": "2026-05-04T15:38:18.104Z",
-  "updated": "2026-05-04T15:38:38.386Z",
+  "updated": "2026-05-04T15:48:36.387Z",
   "id": "TASK-038",
-  "started": "2026-05-04T15:38:38.386Z"
+  "started": "2026-05-04T15:38:38.386Z",
+  "completed": "2026-05-04T15:48:36.387Z",
+  "notes": "[2026-05-04] Merged into sprint-5 at ea2c1d204209"
 }
