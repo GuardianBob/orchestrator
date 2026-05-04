@@ -6,6 +6,39 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-04
+
+### Added — Sprint-4 (multi-library + collision prompt)
+
+- **Multi-library shard support**: orchestrator now reads multiple shard libraries declared in `.orchestrator.json` `tasksSource.libraries[]`. Each library has its own schema, status vocabulary, and rebuild command. Cross-library task linkage via `links[]` field or note keyword scan.
+- **Pre-build collision prompt**: when a task branch already exists at orchestrate-time, the operator is prompted to choose: resume in-place, abort, or force-recreate. Eliminates silent overwrites of in-progress work.
+- **Post-merge cross-library link closure**: when a task that links to shards in other libraries (e.g. `.tasks/` → `.issues/`) is merged, those linked shards are closed automatically with a "Resolved by `<taskId>` @ `<sha12>`" note. Symmetric to primary-shard close; idempotent via marker substring dedupe.
+
+### Added — Sprint-5 (docs + acceptance + release)
+
+- **`skill/SKILL.md`**: rewrote Configuration section + added Shard Library Integration section documenting multi-library schema, status vocab resolution, cross-library link mechanics. (TASK-017)
+- **`README.md`**: documented multi-library setup, shard write-back, cross-library linkage, with a 15-line single-library Quickstart and a 30-line multi-library example. (TASK-018)
+- **`commands/orchestrate.md`**: new bullets for collision prompt, post-merge link closure, multi-library mode. (TASK-019)
+- **End-to-end acceptance test against second consumer project** (`issues-plugin`) — full multi-agent loop validated for two real tasks. Acceptance docs at `acceptance-runbook-2026-05-04.md` + `acceptance-results-2026-05-04.md`. (TASK-020)
+
+### Fixed — Sprint-5
+
+- **`install.ps1`**: previously skipped copying `lib/` and shallow-copied `templates/`, leaving installed skills missing modules. Now performs full recursive copy of all source assets, drops the `-not $Force` skip clause, prints a summary line + post-install verification block. (TASK-037)
+- **`scripts/merge-task.mjs`**: previously wrote shard `notes` field as a JSON array, violating the `notes: string` schema invariant. Both `buildClosedShard` and `buildLinkedClosedShard` now always emit string; legacy array-shaped priors are coerced via `.join('\n')` for backward compatibility. New unit test `tests/unit/merge-task-notes-shape.test.mjs` (8 cases) locks the invariant. (TASK-038)
+
+### Test count
+
+- Pre-sprint-5: 187 / 187 passing
+- Post-sprint-5: 195 / 195 passing (+8 notes-shape unit tests)
+
+### Known follow-ups (post-v0.2.0)
+
+- Hardcoded `DONE_STATUSES` in `scripts/resolve-tasks.mjs:153` — should derive from per-library status vocab instead of a fixed set. Filed as post-sprint-5 follow-up.
+- Branch-name doubled `TASK-` prefix (e.g. `sprint-4-task-TASK-001-...`) — cosmetic; orchestrator interpolates `{taskId}` which already contains `TASK-`. Strip prefix before interpolation in a future cleanup.
+- Inconsistent `started` timestamp on shards — present after retry path, absent on first-attempt success. Probe `branch-setup.mjs` status-flip behavior.
+
+---
+
 ### Added — Sprint-3 (shard-library write path)
 
 - **merge-task.mjs**: closes the primary task shard on merge — flips `status` to `done`, stamps ISO-8601 `completed`, appends merge note with 12-char SHA prefix. Emits structured JSON envelope key `shardClose` with `{ changed, shard, libraryId, reason, files? }`. Posture is *warn-and-continue*: shard-close failures never abort the merge. (TASK-012)
