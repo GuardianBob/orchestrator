@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:38:27.711Z",
+  "updated": "2026-05-04T15:38:39.915Z",
   "next_task_id": "TASK-039",
   "previous_task": {
     "id": "TASK-037",
@@ -10,14 +10,25 @@
     "effort": "S",
     "completed": "2026-05-04T14:46:02.145Z"
   },
-  "current_task": null,
-  "next_task": {
+  "current_task": {
     "id": "TASK-038",
     "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
-    "status": "backlog",
+    "status": "in-progress",
     "effort": "S",
-    "priority": "high",
-    "depends_on": []
+    "started": "2026-05-04T15:38:38.386Z",
+    "assignee": null,
+    "depends_on": [],
+    "acceptance_criteria_count": 7
+  },
+  "next_task": {
+    "id": "TASK-017",
+    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "status": "backlog",
+    "effort": "M",
+    "priority": "medium",
+    "depends_on": [
+      "TASK-016"
+    ]
   },
   "open_tasks": [
     {
@@ -183,7 +194,7 @@
     {
       "id": "TASK-038",
       "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
-      "status": "backlog",
+      "status": "in-progress",
       "effort": "S",
       "priority": "high",
       "tags": [
@@ -196,9 +207,9 @@
   "blocked_tasks": [],
   "counts": {
     "total": 38,
-    "backlog": 15,
+    "backlog": 14,
     "ready": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "blocked": 0,
     "review": 0,
     "done": 23,
