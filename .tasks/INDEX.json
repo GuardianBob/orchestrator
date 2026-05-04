@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T19:32:42.471Z",
-  "next_task_id": "TASK-043",
+  "updated": "2026-05-04T19:54:31.500Z",
+  "next_task_id": "TASK-044",
   "previous_task": {
     "id": "TASK-021",
     "title": "Tag release v1.x.0",
@@ -176,24 +176,36 @@
         "defense-in-depth",
         "post-v0-2-0"
       ]
+    },
+    {
+      "id": "TASK-043",
+      "title": "Fix resolve-tasks.mjs task-id branch lookup ordering",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "medium",
+      "tags": [
+        "bug",
+        "resolver",
+        "phase-7"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 42,
-    "backlog": 13,
+    "total": 43,
+    "backlog": 14,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 29,
     "cancelled": 0,
-    "open": 13,
+    "open": 14,
     "closed": 29,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 17.5,
+    "open_hours": 18,
     "closed_estimate_hours": 65,
     "closed_actual_hours": 65,
     "estimate_accuracy": 1

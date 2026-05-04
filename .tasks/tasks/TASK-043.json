@@ -1,0 +1,21 @@
+{
+  "title": "Fix resolve-tasks.mjs task-id branch lookup ordering",
+  "priority": "medium",
+  "effort": "XS",
+  "status": "backlog",
+  "tags": [
+    "bug",
+    "resolver",
+    "phase-7"
+  ],
+  "description": "scripts/resolve-tasks.mjs:314-316 mTask branch fires before mJira and looks up all.find(x => x.id === mTask[1]). For input 'task-005', capture is '005' but real shard ids are 'TASK-005' (uppercase prefixed). Lookup misses, returns resolution:'none'. For input 'TASK-005', the /i flag makes mTask match too (capture='005'), so JIRA branch is unreachable for any 'task-...' or 'TASK-...' input.\n\nWorkaround: pass 'task-TASK-005' so capture='TASK-005'.\n\nFix options (pick one):\n  1. Reorder: check mJira BEFORE mTask (cleanest; preserves mTask for legacy lowercase 'task-42' numeric ids).\n  2. In mTask branch: when capture is bare digits, retry with primary library's id prefix (read from sample shard or schema).\n  3. Fallthrough: if mTask lookup misses, retry as JIRA pattern on full target.\n\nRecommended: option 1 (reorder). Trivial diff. Acceptance: `node scripts/resolve-tasks.mjs TASK-005` returns queue with 1 task in any project where TASK-005 exists.",
+  "acceptance_criteria": [
+    "node scripts/resolve-tasks.mjs TASK-005 in issues-plugin returns resolution:task-id with TASK-005 in queue",
+    "node scripts/resolve-tasks.mjs task-005 in issues-plugin returns same result",
+    "node scripts/resolve-tasks.mjs sprint-5 still returns all 8 sprint-5 tasks (regression check)",
+    "node scripts/resolve-tasks.mjs count:5 still returns first 5 tasks (regression check)"
+  ],
+  "created": "2026-05-04T19:54:30.024Z",
+  "updated": "2026-05-04T19:54:30.024Z",
+  "id": "TASK-043"
+}
