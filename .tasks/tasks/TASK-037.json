@@ -16,8 +16,12 @@
     "install.ps1 prints a final summary line listing counts of scripts, lib files, templates, commands installed",
     "README.md install section reflects new behavior if it exists; skip this AC if no install section exists in README"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-04T14:40:26.793Z",
-  "updated": "2026-05-04T14:40:26.793Z",
-  "id": "TASK-037"
+  "updated": "2026-05-04T14:46:02.145Z",
+  "id": "TASK-037",
+  "completed": "2026-05-04T14:46:02.145Z",
+  "notes": [
+    "[2026-05-04] Merged into sprint-5 at b83a00c3aee7"
+  ]
 }
