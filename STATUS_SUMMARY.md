@@ -53,3 +53,5 @@
 - [2026-05-04] Completed task-037: Fix install.ps1: install lib/, recurse templates/, drop dir-exists skip
 
 - [2026-05-04] Completed task-038: Fix merge-task notes written as array (schema requires string)
+
+- [2026-05-04] Completed task-020: docs(task-020): acceptance results - PASS, 1 orch bug fixed via TASK-038, 4 issues-plugin findings referred back
