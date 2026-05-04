@@ -12,18 +12,17 @@ $skillDst   = Join-Path $OpencodeRoot 'skills\orchestrator'
 $cmdDst     = Join-Path $OpencodeRoot 'commands'
 $scriptsDst = Join-Path $skillDst 'scripts'
 $tplDst     = Join-Path $skillDst 'templates'
+$libDst     = Join-Path $skillDst 'lib'
 
 Write-Host "Installing orchestrator -> $OpencodeRoot" -ForegroundColor Cyan
+Write-Host "Updating skill at $skillDst" -ForegroundColor Cyan
 
-if ((Test-Path $skillDst) -and -not $Force) {
-  Write-Host "Skill already exists at $skillDst. Re-run with -Force to overwrite." -ForegroundColor Yellow
-} else {
-  New-Item -ItemType Directory -Force -Path $skillDst, $scriptsDst, $tplDst, $cmdDst | Out-Null
-  Copy-Item "$src\skill\SKILL.md" -Destination $skillDst -Force
-  Copy-Item "$src\scripts\*.mjs"  -Destination $scriptsDst -Force
-  Copy-Item "$src\templates\*"    -Destination $tplDst -Force
-  Write-Host "  skill files installed" -ForegroundColor Green
-}
+New-Item -ItemType Directory -Force -Path $skillDst, $scriptsDst, $tplDst, $libDst, $cmdDst | Out-Null
+Copy-Item "$src\skill\SKILL.md" -Destination $skillDst -Force
+Copy-Item "$src\scripts\*.mjs"  -Destination $scriptsDst -Force
+Copy-Item "$src\lib\*"          -Destination $libDst -Force
+Copy-Item "$src\templates\*"    -Destination $tplDst -Recurse -Force
+Write-Host "  skill files installed" -ForegroundColor Green
 
 Copy-Item "$src\commands\orchestrate.md" -Destination $cmdDst -Force
 Write-Host "  /orchestrate slash command installed" -ForegroundColor Green
@@ -44,6 +43,34 @@ try {
   Write-Host "  Node $nv detected" -ForegroundColor Green
 } catch {
   Write-Host "WARNING: node not found on PATH. Scripts will fail." -ForegroundColor Red
+}
+
+$scriptCount = (Get-ChildItem "$scriptsDst" -Filter *.mjs).Count
+$libCount    = (Get-ChildItem "$libDst" -File).Count
+$tplCount    = (Get-ChildItem "$tplDst" -Recurse -File).Count
+$cmdCount    = (Get-ChildItem "$cmdDst" -Filter orchestrate.md).Count
+Write-Host ""
+Write-Host "Installed: scripts=$scriptCount  lib=$libCount  templates=$tplCount  commands=$cmdCount" -ForegroundColor Cyan
+
+# Verify install matches source (excluding *.bak, etc)
+try {
+  $missing = @()
+  Get-ChildItem "$src\lib" -File -Recurse | ForEach-Object {
+    $rel = $_.FullName.Substring("$src\lib\".Length)
+    if (-not (Test-Path (Join-Path $libDst $rel))) { $missing += "lib\$rel" }
+  }
+  Get-ChildItem "$src\templates" -File -Recurse | ForEach-Object {
+    $rel = $_.FullName.Substring("$src\templates\".Length)
+    if (-not (Test-Path (Join-Path $tplDst $rel))) { $missing += "templates\$rel" }
+  }
+  if ($missing.Count -gt 0) {
+    Write-Host "WARNING: missing after install:" -ForegroundColor Red
+    $missing | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+  } else {
+    Write-Host "  all source assets present in install" -ForegroundColor Green
+  }
+} catch {
+  Write-Host "  (post-install verification skipped: $_)" -ForegroundColor Yellow
 }
 
 Write-Host ""

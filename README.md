@@ -32,8 +32,9 @@ A reusable, project-agnostic build → review → merge → next-task system for
 
 ```powershell
 powershell -File C:\Coding\ai_dev\orchestrator\install.ps1
-# (re-install with -Force to overwrite)
 ```
+
+Re-running the installer always overwrites skill files (SKILL.md, scripts, lib, templates, slash command) so updates from the source repo reach the installed copy. The installer prints an `Installed: scripts=… lib=… templates=… commands=…` summary and verifies every source asset under `lib/` and `templates/` is present in the install. The `-Force` switch is retained for compatibility but is no longer required.
 
 Then once-per-machine:
 
