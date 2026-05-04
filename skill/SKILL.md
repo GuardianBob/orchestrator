@@ -239,4 +239,148 @@ All scripts live in the skill's adjacent `scripts/` directory. Resolve `{SKILL_D
 
 ## Configuration reference
 
-See `templates/orchestrator.json` for the schema. Project-specific overrides go in `.orchestrator.json` at project root.
+Project-specific overrides go in `.orchestrator.json` at project root. Full schema in `templates/orchestrator.json`.
+
+### Top-level keys
+
+| Field | Notes |
+|---|---|
+| `branchPrefix` | Sprint branch prefix (e.g. `"sprint"` → `sprint/2025-W42`). |
+| `builderAgents[]` | Ordered roles `{role, agent, parallel?}`; serial unless `parallel: true`. |
+| `reviewerAgents[]` | Reviewer roles `{role, agent}`; all run in parallel. |
+| `maxRetries` | Retry attempts per task before deferral. |
+| `commands.{test,lint,build}` | Shell commands for gates; `null` skips. |
+| `tasksSource` | `{primary, phasePattern?, fallback?}`. Legacy single-source pointer. |
+| `livingDocs[]` | Files updated on each merge (MEMORY.md, STATUS_SUMMARY.md, etc.). |
+| `mergeStrategy` | `"no-ff"` or `"squash"`. |
+| `githubRepo` | `owner/repo` for issue/PR fallback. |
+| `notifications.{progress,approval,blocked}` | Toggle BurntToast events. |
+| `shardLibraries[]` | Multi-library shard config; see §below. |
+
+### `shardLibraries[]` schema
+
+| Field | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `id` | string | **yes** | — | Stable identifier (e.g. `"tasks"`, `"issues"`). Used as `source` in resolver output. |
+| `name` | string | no | `entry.id` | Human label for log lines. |
+| `indexPath` | string (path) | **yes** | — | Path to `INDEX.json`. Resolved relative to `.orchestrator.json`. |
+| `shardDir` | string (path) | **yes** | — | Per-shard `.json` directory. Resolved relative to `.orchestrator.json`. |
+| `schemaPath` | string (path) | no | `<dirname(indexPath)>/schemas/task.schema.json` | JSON Schema with `properties.status.enum` (string array, no `$ref`/`oneOf`). |
+| `statusMap` | `{start,done}` or `null` | no | `null` | Operator override for status vocab. Both keys required if set. See §Shard Library Integration. |
+| `linkField` | string or `null` | no | `null` | Shard field name listing linked IDs (e.g. `"resolves"`). |
+| `primary` | boolean | no | `false` | Exactly one library MUST set `primary: true`. |
+| `rebuildCmd` | string | **yes** | — | Shell command to rebuild `INDEX.json`. Set to `""` to opt out silently. |
+
+Validation is all-or-abort: one bad entry rejects the whole array. Schema enforced in `lib/shard-library.mjs:394-425`.
+
+### Backward-compatibility: `tasksSource.primary`
+
+If `shardLibraries[]` is absent or empty, `loadLibraries` synthesizes a single entry from `tasksSource.primary` (`lib/shard-library.mjs:_synthesizeLegacyLibrary`). `.json` paths become an `indexPath` with `shardDir` inferred as `<indexDir>/tasks`; Markdown paths get a default `.tasks/` library. A `DEBUG_SHARD_LIBRARY=1` warn is emitted in either case. Supported, no deprecation timeline — synthesis has full feature parity for single-library projects.
+
+## Shard Library Integration
+
+### Status inference
+
+Resolved by `resolveStatusVocab` (`lib/shard-library.mjs:323-364`). Resolution order:
+
+1. **Override path** — `library.statusMap = { start, done }`. Both must be non-empty strings; partial = hard error (code `vocab-error:statusmap-partial`). NOT cross-checked against the schema enum (operator is authoritative).
+2. **Heuristic path** — load `library.schemaPath`, read `properties.status.enum`, apply regexes from `lib/shard-library.mjs:379-380`:
+   - `START_RE = /^(in[-_]?progress|active|started|wip)$/i`
+   - `DONE_RE  = /^(done|completed?|closed|resolved|fixed)$/i`
+   - Exactly one match per role required. Zero → `vocab-error:no-match-<role>`. >1 → `vocab-error:ambiguous-<role>`.
+
+**Override path:** set `statusMap` on the library entry (NOT a top-level config key).
+
+**Drift-warning behavior** (per-shard safety net, `scripts/resolve-tasks.mjs:182-197`): when a shard's own `status` is terminal (`done|completed|archived|cancelled|closed`) but `INDEX.json` still lists it as open, the resolver skips the task and emits:
+
+`[resolver] shard drift: <ID> status=<shard> in shard but INDEX says <index>; skipping. Run: npx tasklist-rebuild`
+
+Per-shard status is authoritative; INDEX is the derived projection.
+
+### Cross-library link detection
+
+Implemented in `scanLinks` (`lib/shard-library.mjs:615-670`).
+
+**Explicit field:** `taskShard[library.linkField]`. Accepts `string` or `string[]`. IDs validated against `/^[A-Z][A-Z0-9_]*-\d+$/i`. Routes to the owning library regardless of ID prefix. Invalid entries warn and skip.
+
+`linkField` is the field name the library exposes for explicit link arrays. `scanLinks` reads it from the *current* (primary) shard; a non-primary library's `linkField` documents the field name that library would expose if it ever became primary.
+
+**Keyword regex** (`lib/shard-library.mjs:583`):
+
+```
+/\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?)\s+([A-Z][A-Z0-9_]*-\d+)/gi
+```
+
+Scanned over `(description ?? '') + '\n' + (notes ?? '')`. Matched IDs are routed to a library by sampling each library's existing shard filenames for a leading prefix. Unknown prefixes warn (`[shard-library] scanLinks: unknown ID prefix '...'`) and drop.
+
+**Multi-library link closing on merge** (`scripts/merge-task.mjs:closeLinkedShardsOnMerge`, lines 221-357): after the primary shard is closed, the merge script re-loads the primary, runs `scanLinks`, and for each linked library: resolves vocab → flips each linked shard to `vocab.done` with note `[YYYY-MM-DD] Resolved by <taskId> @ <sha12>`. Idempotent (dedupes by `Resolved by <taskId>` marker). Best-effort: never throws, never blocks the merge. `rebuildLibrary` is invoked AT MOST ONCE per linked library, only if ≥1 shard closed.
+
+### Resilience: rebuild CLI absent
+
+`rebuildLibrary` (`lib/shard-library.mjs:257-298`) is **never-throws**:
+
+- `rebuildCmd` empty/null → `{ ok: false, reason: "library '<id>' has no rebuildCmd configured" }`. Silent (no warn) — operator opt-out.
+- `ENOENT` / "not recognized" / "not found" → `{ ok: false, reason: "rebuild CLI not found ... Install it (e.g. \`npm i -g <guess>\`) or fix rebuildCmd" }`. Warns to stderr.
+- Non-zero exit → `{ ok: false, reason: "rebuild ... exited <N>: <stderr-tail-500>" }`. Warns.
+- Success → `{ ok: true }`.
+
+**Soft-fail rule:** rebuild failure NEVER aborts the orchestrator loop. `branch-setup.mjs` and `merge-task.mjs` log a warning and continue. Operator must run the rebuild CLI manually.
+
+**Hard-fail rule:** absence of `rebuildCmd` is NOT an error. Absence of the underlying CLI is NOT an error. The only hard failures are config-shape errors (caught by `loadLibraries` validation) — those exit 5 in `branch-setup.mjs`.
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `Ambiguous '<role>' status for library '<id>'` (code `vocab-error:ambiguous-<role>`) | Schema `enum` has >1 values matching the start/done heuristic regex (e.g. both `done` and `closed`). | Set `statusMap: { "start": "...", "done": "..." }` on the library entry to bypass the heuristic. |
+| `Schema at <path> has no `properties.status.enum` string array` (`vocab-error:enum-missing`) or `schema not found at <path>` (`vocab-error:schema-missing`) | `schemaPath` is wrong, file deleted, or schema lacks a status enum (or uses `$ref`/`oneOf`). | Set `schemaPath` correctly, OR set `statusMap` to skip schema reads. |
+| `scanLinks: unknown ID prefix '<X>' in '<X-N>'` | Keyword reference (e.g. "fixes ISSUE-42") points at a prefix no library claims; `shardDir` is empty so prefix sampling failed. | Add a `shardLibraries[]` entry whose `shardDir` already contains a `<X>-NNN.json` shard, OR remove the stale reference. |
+| `rebuild CLI not found for library '<id>'. Install it (e.g. `npm i -g <guess>`)` | `rebuildCmd` points at a binary not on `PATH`. | Install the rebuild package, fix the path in `rebuildCmd`, or set `rebuildCmd: ""` to silently opt out (INDEX will drift until rebuilt manually). |
+| Drift warn never fires for library whose terminal status is `"resolved"` (or anything outside `{done, completed, archived, cancelled, closed}`) | The resolver drift check uses a hardcoded `DONE_STATUSES` set in `scripts/resolve-tasks.mjs:153`, NOT `resolveStatusVocab(library).done`. | Known limitation. Use `done`, `completed`, `archived`, `cancelled`, or `closed` as the terminal status for libraries that need drift detection, OR rebuild the index manually after every merge. |
+
+### Complete `.orchestrator.json` example
+
+```json
+{
+  "branchPrefix": "sprint",
+  "builderAgents": [
+    { "role": "architect", "agent": "code-architect", "parallel": false },
+    { "role": "coder", "agent": "fullstack-developer", "parallel": false },
+    { "role": "tester", "agent": "test-automator", "parallel": true }
+  ],
+  "reviewerAgents": [
+    { "role": "code-review", "agent": "code-reviewer" },
+    { "role": "security", "agent": "security-auditor" }
+  ],
+  "maxRetries": 2,
+  "commands": { "test": "npm test", "lint": "npm run lint", "build": null },
+  "tasksSource": { "primary": "TASKLIST.md", "phasePattern": "PHASE_*_PLAN.md", "fallback": "github" },
+  "livingDocs": ["MEMORY.md", "STATUS_SUMMARY.md", "GIT_COMMITS.md", "REVIEW_LOG.md", "TASKLIST.md"],
+  "mergeStrategy": "no-ff",
+  "githubRepo": "acme/widget",
+  "shardLibraries": [
+    {
+      "id": "tasks",
+      "name": "Tasks",
+      "indexPath": ".tasks/INDEX.json",
+      "shardDir": ".tasks/tasks",
+      "schemaPath": ".tasks/schemas/task.schema.json",
+      "linkField": "resolves",
+      "primary": true,
+      "rebuildCmd": "npx tasklist-rebuild"
+    },
+    {
+      "id": "issues",
+      "name": "Issues",
+      "indexPath": ".issues/INDEX.json",
+      "shardDir": ".issues/issues",
+      "statusMap": { "start": "in-progress", "done": "resolved" },
+      "linkField": null,
+      "primary": false,
+      "rebuildCmd": "npx issuelist-rebuild"
+    }
+  ]
+}
+```
+
+All paths resolve relative to `.orchestrator.json` location. The `tasks` entry uses the heuristic path (no `statusMap`); `issues` uses the override path (`statusMap` set, `schemaPath` omitted to use the default). Exactly one entry must set `primary: true`.

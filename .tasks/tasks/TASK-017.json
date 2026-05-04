@@ -13,11 +13,13 @@
     "Troubleshooting table covers: ambiguous-enum, missing-schema, unknown-link, missing-rebuild-CLI",
     "Backward-compat note explains legacy `tasksSource.primary` still works"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:47.559Z",
-  "updated": "2026-05-01T19:10:55.320Z",
+  "updated": "2026-05-04T15:53:57.159Z",
   "id": "TASK-017",
   "depends_on": [
     "TASK-016"
-  ]
+  ],
+  "completed": "2026-05-04T15:53:57.159Z",
+  "notes": "[2026-05-04] Reconciled: merged into sprint-5 at f2ef5e7 (shard status-flip missed during original merge)"
 }

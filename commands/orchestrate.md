@@ -13,6 +13,12 @@ Targets supported:
 - `next` — run one task, then stop
 - `review-sprint` (or `review-sprint-<N>`) — post-sprint audit: read `sprint-<N>-complete.md` + reviewer findings + gate failures, cross-reference against `TASKLIST.md`, ask the user about gaps, and add new tasks. NO builders or reviewers are dispatched. NO branches are created.
 
+## What `/orchestrate` does that wasn't obvious
+
+- **Pre-build collision prompt** — if a task shard is already in-progress when its branch is created, you'll be asked: **resume** (keep existing started timestamp), **restart** (overwrite, log restart), or **abandon** (exit, no dispatch). Non-interactive runs default to abandon (exit code 4).
+- **Post-merge cross-library link closure** — merging a task auto-closes any shards it `resolves` (explicit field) or references via "fixes/closes/resolves <ID>" in its description or notes. Works across libraries (e.g. closing TASK-42 also closes ISSUE-7 if linked). Idempotent and never blocks the merge.
+- **Multi-library support** — tasks can come from multiple `shardLibraries[]` (e.g. `gen-tasklist` for tasks + `gen-issues` for bugs). One library must be `primary: true`. See `skill/SKILL.md` for the full schema.
+
 If target is `init`, run `node {SKILL_DIR}/../scripts/init-project.mjs`, show me the result, suggest fields to review in `.orchestrator.json` (especially `builderAgents` and `reviewerAgents`), and STOP. Do not resolve tasks, do not branch, do not dispatch agents.
 
 If target is `review-sprint` or `review-sprint-<N>`, follow the skill's **Step 0b** exactly: run `node {SKILL_DIR}/../scripts/review-sprint.mjs` (auto-detects latest sprint if `<N>` omitted), cross-reference deferred items / reviewer findings / gate failures against existing tasks, propose new tasks grouped by sprint, **ask the user via the `question` tool** to confirm additions and resolve ambiguity, then append confirmed tasks to `TASKLIST.md`. Do NOT dispatch agents, do NOT create branches, do NOT touch any other files.

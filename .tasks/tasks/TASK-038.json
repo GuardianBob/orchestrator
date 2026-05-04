@@ -1,0 +1,27 @@
+{
+  "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
+  "effort": "S",
+  "priority": "high",
+  "tags": [
+    "bug",
+    "lib-core",
+    "sprint-5"
+  ],
+  "description": "scripts/merge-task.mjs writes shard notes as a JSON array, but the gen-tasklist task schema (.tasks/schemas/task.schema.json in BOTH this repo and consumer projects) declares notes as type: string. The header comment at line 43 has the polarity inverted: it claims to tolerate legacy notes-as-string, but string IS the schema and array is the bug.\n\nDiscovered during TASK-020 live acceptance test against issues-plugin sprint-4: both task merges produced shards with notes as array, requiring the operator to manually push two coercion commits (d258e71 and 9fff926). Subsequent inspection found TASK-037 in our own repo also has notes as a single-element array.\n\nLines affected: 47-50 (closeShardOnMerge primary close path) and 77-94 (closeLinkedShardsOnMerge linked close path). Both branches set notes to either an array literal or push-onto-array, instead of newline-joining strings.\n\nFix: notes is always a string. When prev is undefined or empty, set notes to noteEntry. When prev is a string, set notes to prev plus newline plus noteEntry. When prev is an array (legacy data from this very bug), join with newline and append noteEntry to maintain backward compat for already-corrupted shards.",
+  "acceptance_criteria": [
+    "scripts/merge-task.mjs lines 47-50: notes is always assigned a string. No array literal, no spread into array.",
+    "scripts/merge-task.mjs lines 77-94: same. All four branches (no prior, string prior, array prior dedupe, array prior append) yield string output.",
+    "Header comment at line 43 corrected to describe actual behavior (notes is string, joined with newline, tolerates legacy array prior data).",
+    "Existing unit tests for merge-task pass without modification.",
+    "Add a unit test asserting shard.notes is typeof string after closeShardOnMerge runs (covers both fresh and legacy-array-prior cases).",
+    "Manual verification: re-run merge on a fixture and assert produced JSON validates against .tasks/schemas/task.schema.json.",
+    "Back-fix the orchestrator repo's own TASK-037 shard (.tasks/tasks/TASK-037.json) to coerce its current array notes to a string. Commit separately as a chore."
+  ],
+  "status": "done",
+  "created": "2026-05-04T15:38:18.104Z",
+  "updated": "2026-05-04T15:48:36.387Z",
+  "id": "TASK-038",
+  "started": "2026-05-04T15:38:38.386Z",
+  "completed": "2026-05-04T15:48:36.387Z",
+  "notes": "[2026-05-04] Merged into sprint-5 at ea2c1d204209"
+}

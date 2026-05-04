@@ -1,82 +1,27 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T05:55:17.223Z",
-  "next_task_id": "TASK-037",
+  "updated": "2026-05-04T16:09:09.287Z",
+  "next_task_id": "TASK-039",
   "previous_task": {
-    "id": "TASK-036",
-    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+    "id": "TASK-021",
+    "title": "Tag release v1.x.0",
     "status": "done",
-    "effort": "S",
-    "completed": "2026-05-02T04:33:01Z"
+    "effort": "XS",
+    "completed": "2026-05-04T16:09:07.519Z"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-017",
-    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "id": "TASK-030",
+    "title": "Reasons registry: introduce family aggregates",
     "status": "backlog",
-    "effort": "M",
+    "effort": "XS",
     "priority": "medium",
     "depends_on": [
-      "TASK-016"
+      "TASK-027"
     ]
   },
   "open_tasks": [
-    {
-      "id": "TASK-017",
-      "title": "Rewrite `skill/SKILL.md` Configuration section",
-      "status": "backlog",
-      "effort": "M",
-      "priority": "medium",
-      "tags": [
-        "docs",
-        "sprint-shard-d"
-      ]
-    },
-    {
-      "id": "TASK-018",
-      "title": "Update `README.md`",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "medium",
-      "tags": [
-        "docs",
-        "sprint-shard-d"
-      ]
-    },
-    {
-      "id": "TASK-019",
-      "title": "Audit `commands/*.md` for behavior changes",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "medium",
-      "tags": [
-        "docs",
-        "sprint-shard-d"
-      ]
-    },
-    {
-      "id": "TASK-020",
-      "title": "Live acceptance test against `issues-plugin` sprint-4",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "acceptance",
-        "sprint-shard-d"
-      ]
-    },
-    {
-      "id": "TASK-021",
-      "title": "Tag release v1.x.0",
-      "status": "backlog",
-      "effort": "XS",
-      "priority": "medium",
-      "tags": [
-        "release",
-        "sprint-shard-d"
-      ]
-    },
     {
       "id": "TASK-022",
       "title": "Post-launch monitoring task (placeholder)",
@@ -185,22 +130,22 @@
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 36,
-    "backlog": 14,
+    "total": 38,
+    "backlog": 9,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 22,
+    "done": 29,
     "cancelled": 0,
-    "open": 14,
-    "closed": 22,
+    "open": 9,
+    "closed": 29,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 22.5,
-    "closed_estimate_hours": 53,
-    "closed_actual_hours": 53,
+    "open_hours": 13.5,
+    "closed_estimate_hours": 65,
+    "closed_actual_hours": 65,
     "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"

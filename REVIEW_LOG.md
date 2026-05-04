@@ -29,3 +29,10 @@
 | 2026-05-02T04:16 | 033 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:DEBUG_MERGE_TASK gate is strict equality with '1'. Values like 'true', 'yes', or any other truthy string will fall through to redaction. This is documented in the JSDoc as dev-only opt-in and mat |
 | 2026-05-02T04:32 | 036 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Both e.message interpolations on L247 and L248 (statusFlip.reason) wrapped with sanitizeErrorMessage. Prefix '[branch-setup] restart write failed:' preserved.; info:UsageError stderr write saniti |
 | 2026-05-02T04:32 | 036 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Both e.message interpolations on L247 and L248 (statusFlip.reason) wrapped with sanitizeErrorMessage. Prefix '[branch-setup] restart write failed:' preserved.; info:UsageError stderr write saniti |
+| 2026-05-02T06:25 | 017 | 1 | pass | skip | skip | approve,approve,approve | PASS | info:Architectural fidelity: VERIFIED. resolveStatusVocab semantics (override wins, NOT cross-checked against schema enum), START_RE/DONE_RE patterns, scanLinks explicit+keyword paths, closeLinkedShar |
+| 2026-05-02T06:29 | 018 | 1 | pass | skip | skip | approve,approve | PASS | info:; info:; info:; info:All 3 ```json blocks parse successfully via JSON.parse.; info:Multi-library example uses field names consistent with skill/SKILL.md (id, indexPath, shardDir, schemaPath, link |
+| 2026-05-02T06:32 | 019 | 1 | pass | skip | skip | approve | PASS |  |
+| 2026-05-04T14:45 | 037 | 1 | pass | skip | skip | approve,approve | PASS |  |
+| 2026-05-04T15:48 | 038 | 1 | pass | skip | skip | approve,approve | PASS | low:; low:; low:; low:; low: |
+| 2026-05-04T15:53 | 020 | 1 | pass | skip | skip | approve | PASS | low:; low: |
+| 2026-05-04T16:09 | 021 | 1 | pass | skip | skip | approve | PASS | low:; low: |

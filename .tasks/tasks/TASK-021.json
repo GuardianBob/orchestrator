@@ -12,11 +12,14 @@
     "Tag pushed to remote",
     "CHANGELOG entry summarizes user-facing changes only (no implementation detail)"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:53.602Z",
-  "updated": "2026-05-01T19:10:55.331Z",
+  "updated": "2026-05-04T16:09:07.519Z",
   "id": "TASK-021",
   "depends_on": [
     "TASK-020"
-  ]
+  ],
+  "started": "2026-05-04T15:59:45.896Z",
+  "completed": "2026-05-04T16:09:07.519Z",
+  "notes": "[2026-05-04] Merged into sprint-5 at 6b0a15a3cdfd"
 }

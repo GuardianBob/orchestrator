@@ -1,0 +1,25 @@
+{
+  "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
+  "effort": "S",
+  "priority": "high",
+  "tags": [
+    "install",
+    "ci-tests",
+    "sprint-5"
+  ],
+  "description": "Three bugs in install.ps1 prevent the new sprint-1/2/3 features from reaching installed copies. (1) lib/ directory is never copied; scripts that import from ../lib/shard-library.mjs etc. crash at module load. (2) Copy-Item with templates wildcard does shallow copy; subdirectory templates/living-docs/ (5 files) never installed; init-project.mjs cannot scaffold living docs. (3) Lines 18-26: if skillDst exists AND not Force, entire skill copy is skipped; operator runs install, sees no error, assumes everything updated. Verify by diffing installed dir vs source dir post-install.",
+  "acceptance_criteria": [
+    "install.ps1 copies lib/*.mjs to skillDst/lib/ (creates dir if absent)",
+    "install.ps1 copies templates/ recursively so templates/living-docs/*.md lands in skillDst/templates/living-docs/",
+    "Install always copies skill files even when skillDst exists. Drop the not-Force skip or replace with per-file overwrite. Default behavior is always-overwrite for skill-owned files.",
+    "After running install.ps1 -Force, recursive diff of C:/Coding/ai_dev/orchestrator/skill vs C:/Users/v-jessemeyer/.config/opencode/skills/orchestrator reports zero differences excluding .git and node_modules",
+    "install.ps1 prints a final summary line listing counts of scripts, lib files, templates, commands installed",
+    "README.md install section reflects new behavior if it exists; skip this AC if no install section exists in README"
+  ],
+  "status": "done",
+  "created": "2026-05-04T14:40:26.793Z",
+  "updated": "2026-05-04T14:46:02.145Z",
+  "id": "TASK-037",
+  "completed": "2026-05-04T14:46:02.145Z",
+  "notes": "[2026-05-04] Merged into sprint-5 at b83a00c3aee7"
+}

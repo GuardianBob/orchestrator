@@ -249,16 +249,14 @@ describe('integration: merge-task post-merge pipeline (TASK-015)', () => {
     const taskShard = readJson(path.join(repo.dir, '.tasks', 'tasks', 'TASK-101.json'));
     expect(taskShard.status).toBe('done');
     expect(taskShard.completed).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(taskShard.notes).toEqual(expect.arrayContaining([
-      expect.stringMatching(/Merged into sprint-3 at [0-9a-f]{12}/),
-    ]));
+    expect(typeof taskShard.notes).toBe('string');
+    expect(taskShard.notes).toMatch(/Merged into sprint-3 at [0-9a-f]{12}/);
 
     const issueShard = readJson(path.join(repo.dir, '.issues', 'issues', 'ISSUE-042.json'));
     expect(issueShard.status).toBe('resolved');
     expect(issueShard.completed).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(issueShard.notes).toEqual(expect.arrayContaining([
-      expect.stringMatching(/Resolved by TASK-101 @ [0-9a-f]{12}/),
-    ]));
+    expect(typeof issueShard.notes).toBe('string');
+    expect(issueShard.notes).toMatch(/Resolved by TASK-101 @ [0-9a-f]{12}/);
   }, 30_000);
 
   // -------------------------------------------------------------------------

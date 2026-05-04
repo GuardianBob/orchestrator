@@ -43,3 +43,17 @@
 - [2026-05-02] Completed task-033: Sanitize stderr warnings in closePrimaryShardOnMerge (close SEC-W-012-1)
 
 - [2026-05-02] Completed task-036: Apply sanitizeErrorMessage to branch-setup.mjs + resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)
+
+- [2026-05-02] Completed task-017: Rewrite skill/SKILL.md Configuration section + add Shard Library Integration
+
+- [2026-05-02] Completed task-018: Update README.md for multi-library + write-back + cross-library linkage
+
+- [2026-05-02] Completed task-019: Audit commands/orchestrate.md for new sprint-1/2/3 behaviors
+
+- [2026-05-04] Completed task-037: Fix install.ps1: install lib/, recurse templates/, drop dir-exists skip
+
+- [2026-05-04] Completed task-038: Fix merge-task notes written as array (schema requires string)
+
+- [2026-05-04] Completed task-020: docs(task-020): acceptance results - PASS, 1 orch bug fixed via TASK-038, 4 issues-plugin findings referred back
+
+- [2026-05-04] Completed task-021: release(v0.2.0): sprint-4 multi-library + sprint-5 docs/install/notes fixes (TASK-021)

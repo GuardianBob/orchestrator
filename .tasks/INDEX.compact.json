@@ -1,35 +1,35 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T05:55:17.223Z",
-  "next_task_id": "TASK-037",
+  "updated": "2026-05-04T16:09:09.287Z",
+  "next_task_id": "TASK-039",
   "counts": {
-    "total": 36,
-    "backlog": 14,
+    "total": 38,
+    "backlog": 9,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 22,
+    "done": 29,
     "cancelled": 0,
-    "open": 14,
-    "closed": 22,
+    "open": 9,
+    "closed": 29,
     "archived": 0
   },
   "previous_task": {
-    "id": "TASK-036",
-    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+    "id": "TASK-021",
+    "title": "Tag release v1.x.0",
     "status": "done"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-017",
-    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "id": "TASK-030",
+    "title": "Reasons registry: introduce family aggregates",
     "status": "backlog"
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 14,
+    "open_tasks": 9,
     "blocked_tasks": 0
   }
 }
