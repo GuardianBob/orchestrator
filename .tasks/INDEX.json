@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T16:14:01.185Z",
-  "next_task_id": "TASK-039",
+  "updated": "2026-05-04T16:14:18.303Z",
+  "next_task_id": "TASK-042",
   "previous_task": {
     "id": "TASK-021",
     "title": "Tag release v1.x.0",
@@ -126,24 +126,61 @@
         "resilience",
         "sprint-3-followup"
       ]
+    },
+    {
+      "id": "TASK-039",
+      "title": "Derive DONE_STATUSES from per-library status vocab in resolve-tasks.mjs:153",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "medium",
+      "tags": [
+        "bug",
+        "lib-core",
+        "post-v0-2-0"
+      ]
+    },
+    {
+      "id": "TASK-040",
+      "title": "Fix doubled TASK- prefix in branch names (sprint-N-task-TASK-NNN-slug)",
+      "status": "backlog",
+      "effort": "XS",
+      "priority": "low",
+      "tags": [
+        "bug",
+        "cli-scripts",
+        "polish",
+        "post-v0-2-0"
+      ]
+    },
+    {
+      "id": "TASK-041",
+      "title": "Probe + fix inconsistent 'started' timestamp on shards (retry vs first-attempt)",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "low",
+      "tags": [
+        "bug",
+        "lib-core",
+        "post-v0-2-0"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 38,
-    "backlog": 9,
+    "total": 41,
+    "backlog": 12,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 29,
     "cancelled": 0,
-    "open": 9,
+    "open": 12,
     "closed": 29,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 13.5,
+    "open_hours": 17,
     "closed_estimate_hours": 65,
     "closed_actual_hours": 65,
     "estimate_accuracy": 1

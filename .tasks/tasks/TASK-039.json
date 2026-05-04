@@ -1,0 +1,22 @@
+{
+  "title": "Derive DONE_STATUSES from per-library status vocab in resolve-tasks.mjs:153",
+  "effort": "S",
+  "priority": "medium",
+  "tags": [
+    "bug",
+    "lib-core",
+    "post-v0-2-0"
+  ],
+  "description": "scripts/resolve-tasks.mjs:153 hardcodes DONE_STATUSES as a fixed set, ignoring per-library status vocabulary configured in .orchestrator.json. This means a library declaring custom done states (e.g. closed, resolved, archived) won't have those tasks correctly filtered out of the resolve queue.\n\nDiscovered during TASK-017 architect-reviewer pass on sprint-5. Confirmed real bug: lib/shard-library.mjs has resolveStatusVocab() at lines 323-364 that returns the per-library vocab; the resolver should consume it instead of using a constant.\n\nBackward compat: existing libraries using default vocab (backlog/in-progress/done) must continue to work with no .orchestrator.json change required.",
+  "acceptance_criteria": [
+    "scripts/resolve-tasks.mjs:153 no longer references a top-level constant DONE_STATUSES; instead derives done set from each library's resolved status vocab.",
+    "When .orchestrator.json declares custom statusVocab (e.g. statusVocab.done = closed), tasks in that state are correctly excluded from resolve queue.",
+    "Existing default-vocab libraries continue to work unchanged.",
+    "Add unit test covering: (a) custom done vocab excludes correctly, (b) default vocab still excludes 'done', (c) library-without-statusVocab uses defaults.",
+    "Existing 195 tests still pass."
+  ],
+  "status": "backlog",
+  "created": "2026-05-04T16:14:11.818Z",
+  "updated": "2026-05-04T16:14:11.818Z",
+  "id": "TASK-039"
+}

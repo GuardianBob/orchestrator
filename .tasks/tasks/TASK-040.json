@@ -1,0 +1,23 @@
+{
+  "title": "Fix doubled TASK- prefix in branch names (sprint-N-task-TASK-NNN-slug)",
+  "effort": "XS",
+  "priority": "low",
+  "tags": [
+    "bug",
+    "cli-scripts",
+    "polish",
+    "post-v0-2-0"
+  ],
+  "description": "Orchestrator builds task branches as `sprint-{N}-task-{taskId}-{slug}` where taskId already contains the 'TASK-' prefix, producing cosmetic doubling like `sprint-4-task-TASK-001-bootstrap-repo-scaffold`. Discovered during TASK-020 live acceptance test against issues-plugin.\n\nFix: strip leading 'TASK-' from taskId before interpolating into branch template, OR change template to `sprint-{N}-{taskId}-{slug}`. Latter is cleaner but renames branch convention. Former is a 2-line fix in scripts/branch-setup.mjs and the merge-task.mjs branch-name logic.",
+  "acceptance_criteria": [
+    "New branches created as `sprint-{N}-task-NNN-{slug}` (single TASK- removed) OR `sprint-{N}-{taskId}-{slug}` (full id, no extra task- prefix).",
+    "Existing branches with old naming continue to work (merge-task can still find/merge them).",
+    "Decision documented in commit message: which of the two patterns chosen and why.",
+    "Tests for branch-setup updated to reflect new pattern.",
+    "All existing tests pass."
+  ],
+  "status": "backlog",
+  "created": "2026-05-04T16:14:14.063Z",
+  "updated": "2026-05-04T16:14:14.063Z",
+  "id": "TASK-040"
+}

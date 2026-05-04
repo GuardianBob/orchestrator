@@ -1,0 +1,22 @@
+{
+  "title": "Probe + fix inconsistent 'started' timestamp on shards (retry vs first-attempt)",
+  "effort": "S",
+  "priority": "low",
+  "tags": [
+    "bug",
+    "lib-core",
+    "post-v0-2-0"
+  ],
+  "description": "Shards processed via the orchestrator workflow inconsistently get a 'started' timestamp: present after retry path, sometimes absent on first-attempt success.\n\nObserved during TASK-020 acceptance test against issues-plugin: TASK-001 (which needed attempt-2) had 'started' set; TASK-002 (first-attempt success) did not. Both had 'completed'. Investigation needed in scripts/branch-setup.mjs status-flip logic (the buildBacklogToInProgress path) and any retry replay code.\n\nExpected behavior: 'started' should be set exactly once, on the first transition from backlog to in-progress, regardless of attempt count.",
+  "acceptance_criteria": [
+    "Probe: trace 'started' field assignment in scripts/branch-setup.mjs and any merge-task.mjs status writes; document which code path sets it.",
+    "Fix: ensure 'started' is set on FIRST status flip from backlog to in-progress, never reset on retry.",
+    "Add unit test: shard goes through (backlog -> in-progress -> backlog -> in-progress -> done) cycle, 'started' is the FIRST in-progress timestamp not the last.",
+    "Add unit test: shard goes through (backlog -> in-progress -> done) on first attempt, 'started' is set.",
+    "All existing 195 tests pass."
+  ],
+  "status": "backlog",
+  "created": "2026-05-04T16:14:16.236Z",
+  "updated": "2026-05-04T16:14:16.236Z",
+  "id": "TASK-041"
+}
