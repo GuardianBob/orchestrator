@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T14:40:27.725Z",
-  "next_task_id": "TASK-038",
+  "updated": "2026-05-04T15:38:27.711Z",
+  "next_task_id": "TASK-039",
   "previous_task": {
-    "id": "TASK-036",
-    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+    "id": "TASK-037",
+    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
     "status": "done",
     "effort": "S",
-    "completed": "2026-05-02T04:33:01Z"
+    "completed": "2026-05-04T14:46:02.145Z"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-037",
-    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
+    "id": "TASK-038",
+    "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
     "status": "backlog",
     "effort": "S",
     "priority": "high",
@@ -181,36 +181,36 @@
       ]
     },
     {
-      "id": "TASK-037",
-      "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
+      "id": "TASK-038",
+      "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
       "status": "backlog",
       "effort": "S",
       "priority": "high",
       "tags": [
-        "install",
-        "ci-tests",
+        "bug",
+        "lib-core",
         "sprint-5"
       ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 37,
+    "total": 38,
     "backlog": 15,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 22,
+    "done": 23,
     "cancelled": 0,
     "open": 15,
-    "closed": 22,
+    "closed": 23,
     "archived": 0
   },
   "effort_summary": {
     "open_hours": 24,
-    "closed_estimate_hours": 53,
-    "closed_actual_hours": 53,
+    "closed_estimate_hours": 54.5,
+    "closed_actual_hours": 54.5,
     "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"

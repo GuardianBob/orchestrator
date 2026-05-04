@@ -1,30 +1,30 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T14:40:27.725Z",
-  "next_task_id": "TASK-038",
+  "updated": "2026-05-04T15:38:27.711Z",
+  "next_task_id": "TASK-039",
   "counts": {
-    "total": 37,
+    "total": 38,
     "backlog": 15,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 22,
+    "done": 23,
     "cancelled": 0,
     "open": 15,
-    "closed": 22,
+    "closed": 23,
     "archived": 0
   },
   "previous_task": {
-    "id": "TASK-036",
-    "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
+    "id": "TASK-037",
+    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
     "status": "done"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-037",
-    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
+    "id": "TASK-038",
+    "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
     "status": "backlog"
   },
   "blocked_top": [],
