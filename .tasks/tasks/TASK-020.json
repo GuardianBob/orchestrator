@@ -13,14 +13,16 @@
     "Output captured to a dated file in repo root (gitignored)",
     "Any deviation triggers a new bug task before closing this one"
   ],
-  "status": "backlog",
+  "status": "done",
   "created": "2026-05-01T19:10:52.103Z",
-  "updated": "2026-05-01T19:10:55.327Z",
+  "updated": "2026-05-04T15:53:16.872Z",
   "id": "TASK-020",
   "depends_on": [
     "TASK-016",
     "TASK-017",
     "TASK-018",
     "TASK-019"
-  ]
+  ],
+  "completed": "2026-05-04T15:53:16.872Z",
+  "notes": "[2026-05-04] Merged into sprint-5 at 22aa630c5b0f"
 }

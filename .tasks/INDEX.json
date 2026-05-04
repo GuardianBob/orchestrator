@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:48:44.785Z",
+  "updated": "2026-05-04T15:53:18.575Z",
   "next_task_id": "TASK-039",
   "previous_task": {
-    "id": "TASK-038",
-    "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
+    "id": "TASK-020",
+    "title": "Live acceptance test against `issues-plugin` sprint-4",
     "status": "done",
     "effort": "S",
-    "completed": "2026-05-04T15:48:36.387Z"
+    "completed": "2026-05-04T15:53:16.872Z"
   },
   "current_task": null,
   "next_task": {
@@ -52,17 +52,6 @@
       "priority": "medium",
       "tags": [
         "docs",
-        "sprint-shard-d"
-      ]
-    },
-    {
-      "id": "TASK-020",
-      "title": "Live acceptance test against `issues-plugin` sprint-4",
-      "status": "backlog",
-      "effort": "S",
-      "priority": "high",
-      "tags": [
-        "acceptance",
         "sprint-shard-d"
       ]
     },
@@ -186,21 +175,21 @@
   "blocked_tasks": [],
   "counts": {
     "total": 38,
-    "backlog": 14,
+    "backlog": 13,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 24,
+    "done": 25,
     "cancelled": 0,
-    "open": 14,
-    "closed": 24,
+    "open": 13,
+    "closed": 25,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 22.5,
-    "closed_estimate_hours": 56,
-    "closed_actual_hours": 56,
+    "open_hours": 21,
+    "closed_estimate_hours": 57.5,
+    "closed_actual_hours": 57.5,
     "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"

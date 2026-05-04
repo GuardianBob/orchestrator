@@ -1,24 +1,24 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:48:44.785Z",
+  "updated": "2026-05-04T15:53:18.575Z",
   "next_task_id": "TASK-039",
   "counts": {
     "total": 38,
-    "backlog": 14,
+    "backlog": 13,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 24,
+    "done": 25,
     "cancelled": 0,
-    "open": 14,
-    "closed": 24,
+    "open": 13,
+    "closed": 25,
     "archived": 0
   },
   "previous_task": {
-    "id": "TASK-038",
-    "title": "Fix merge-task.mjs: notes written as array violates task schema (must be string)",
+    "id": "TASK-020",
+    "title": "Live acceptance test against `issues-plugin` sprint-4",
     "status": "done"
   },
   "current_task": null,
@@ -29,7 +29,7 @@
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 14,
+    "open_tasks": 13,
     "blocked_tasks": 0
   }
 }
