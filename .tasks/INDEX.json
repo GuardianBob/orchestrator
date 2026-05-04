@@ -1,38 +1,27 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-04T15:53:59.641Z",
+  "updated": "2026-05-04T16:09:09.287Z",
   "next_task_id": "TASK-039",
   "previous_task": {
-    "id": "TASK-019",
-    "title": "Audit `commands/*.md` for behavior changes",
+    "id": "TASK-021",
+    "title": "Tag release v1.x.0",
     "status": "done",
-    "effort": "S",
-    "completed": "2026-05-04T15:53:57.166Z"
+    "effort": "XS",
+    "completed": "2026-05-04T16:09:07.519Z"
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-021",
-    "title": "Tag release v1.x.0",
+    "id": "TASK-030",
+    "title": "Reasons registry: introduce family aggregates",
     "status": "backlog",
     "effort": "XS",
     "priority": "medium",
     "depends_on": [
-      "TASK-020"
+      "TASK-027"
     ]
   },
   "open_tasks": [
-    {
-      "id": "TASK-021",
-      "title": "Tag release v1.x.0",
-      "status": "backlog",
-      "effort": "XS",
-      "priority": "medium",
-      "tags": [
-        "release",
-        "sprint-shard-d"
-      ]
-    },
     {
       "id": "TASK-022",
       "title": "Post-launch monitoring task (placeholder)",
@@ -142,21 +131,21 @@
   "blocked_tasks": [],
   "counts": {
     "total": 38,
-    "backlog": 10,
+    "backlog": 9,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
-    "done": 28,
+    "done": 29,
     "cancelled": 0,
-    "open": 10,
-    "closed": 28,
+    "open": 9,
+    "closed": 29,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 14,
-    "closed_estimate_hours": 64.5,
-    "closed_actual_hours": 64.5,
+    "open_hours": 13.5,
+    "closed_estimate_hours": 65,
+    "closed_actual_hours": 65,
     "estimate_accuracy": 1
   },
   "project_root": "C:\\Coding\\ai_dev\\orchestrator"
