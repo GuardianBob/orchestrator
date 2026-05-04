@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T05:55:17.223Z",
-  "next_task_id": "TASK-037",
+  "updated": "2026-05-04T14:40:27.725Z",
+  "next_task_id": "TASK-038",
   "counts": {
-    "total": 36,
-    "backlog": 14,
+    "total": 37,
+    "backlog": 15,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 22,
     "cancelled": 0,
-    "open": 14,
+    "open": 15,
     "closed": 22,
     "archived": 0
   },
@@ -23,13 +23,13 @@
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-017",
-    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "id": "TASK-037",
+    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
     "status": "backlog"
   },
   "blocked_top": [],
   "truncated": {
-    "open_tasks": 14,
+    "open_tasks": 15,
     "blocked_tasks": 0
   }
 }

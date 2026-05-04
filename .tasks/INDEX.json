@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generator": "tasklist-rebuild@1.0.0",
-  "updated": "2026-05-02T05:55:17.223Z",
-  "next_task_id": "TASK-037",
+  "updated": "2026-05-04T14:40:27.725Z",
+  "next_task_id": "TASK-038",
   "previous_task": {
     "id": "TASK-036",
     "title": "Apply sanitizeErrorMessage to branch-setup.mjs and resolve-tasks.mjs (close SEC-W-012-1 cross-cutting)",
@@ -12,14 +12,12 @@
   },
   "current_task": null,
   "next_task": {
-    "id": "TASK-017",
-    "title": "Rewrite `skill/SKILL.md` Configuration section",
+    "id": "TASK-037",
+    "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
     "status": "backlog",
-    "effort": "M",
-    "priority": "medium",
-    "depends_on": [
-      "TASK-016"
-    ]
+    "effort": "S",
+    "priority": "high",
+    "depends_on": []
   },
   "open_tasks": [
     {
@@ -181,24 +179,36 @@
         "resilience",
         "sprint-3-followup"
       ]
+    },
+    {
+      "id": "TASK-037",
+      "title": "Fix install.ps1: missing lib/, shallow templates copy, dir-exists detection",
+      "status": "backlog",
+      "effort": "S",
+      "priority": "high",
+      "tags": [
+        "install",
+        "ci-tests",
+        "sprint-5"
+      ]
     }
   ],
   "blocked_tasks": [],
   "counts": {
-    "total": 36,
-    "backlog": 14,
+    "total": 37,
+    "backlog": 15,
     "ready": 0,
     "in_progress": 0,
     "blocked": 0,
     "review": 0,
     "done": 22,
     "cancelled": 0,
-    "open": 14,
+    "open": 15,
     "closed": 22,
     "archived": 0
   },
   "effort_summary": {
-    "open_hours": 22.5,
+    "open_hours": 24,
     "closed_estimate_hours": 53,
     "closed_actual_hours": 53,
     "estimate_accuracy": 1
